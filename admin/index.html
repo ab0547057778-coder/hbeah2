@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>لوحة تحكم Microblading By Hebah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#fbf6f2; --paper:#f3e8e3; --rose:#b98b80; --rose-deep:#8a5f55; --ink:#2a2d33; --muted:#6d6763;
+  --line:#e4d4ce; --surface:#ffffff; --ok:#3f7a5a; --ok-bg:#e7f3ec; --warn:#8a4b2a; --warn-bg:#fbeee6; --bad:#b3261e; --bad-bg:#fbe9e7;
+  --f-display:"Alexandria","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic","Alexandria",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --cream:#202328; --paper:#292c32; --rose:#d2a89e; --rose-deep:#e4c1b8; --ink:#f3e8e3; --muted:#b4aaa5;
+    --line:#3b3e45; --surface:#2b2e34; --ok:#86c4a2; --ok-bg:#223229; --warn:#f0c2a6; --warn-bg:#3a2e29; --bad:#ff8a80; --bad-bg:#3a2222; color-scheme:dark; }
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--f-body);line-height:1.6}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-display);font-weight:500;margin:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:11px 20px;font-family:var(--f-display);font-weight:500;font-size:15px;cursor:pointer;background:var(--rose-deep);color:var(--cream)}
+.btn:hover{background:var(--rose)}
+.btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn-ghost:hover{box-shadow:inset 0 0 0 1px var(--rose)}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:9px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn-danger{background:var(--bad);color:#fff}
+input,select,textarea{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--rose-deep);outline-offset:1px}
+label{font-size:13px;font-weight:500;display:block;margin-bottom:5px}
+
+/* login */
+#login-screen{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:36px 32px;width:min(380px,100%);box-shadow:0 20px 50px rgba(0,0,0,.08)}
+.login-card h1{font-size:22px;margin-bottom:4px}
+.login-card p{color:var(--muted);font-size:14px;margin:0 0 22px}
+.login-err{color:var(--bad);font-size:14px;margin-top:10px;display:none}
+.login-err.show{display:block}
+
+/* app shell */
+#app{display:none}
+.topbar{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:14px 24px}
+.topbar h1{font-size:18px;color:var(--rose-deep)}
+.tabs{display:flex;gap:6px;margin-inline-start:24px}
+.tab{padding:9px 16px;border-radius:999px;background:transparent;border:0;cursor:pointer;font-size:14px;color:var(--muted)}
+.tab.on{background:var(--paper);color:var(--ink);font-weight:500}
+.spacer{flex:1}
+main{max-width:1080px;margin:0 auto;padding:28px 24px 60px}
+.view{display:none}
+.view.on{display:block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1;min-width:140px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:12px 20px;border-radius:12px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+
+/* bookings */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.filters select,.filters input{width:auto;min-width:140px}
+.filters input[type=search]{min-width:220px;flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:12px 10px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:13px}
+td.notes-cell{white-space:normal;max-width:220px;color:var(--muted);font-size:13px}
+.badge{display:inline-flex;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:500}
+.badge.pending{background:var(--warn-bg);color:var(--warn)}
+.badge.confirmed{background:var(--ok-bg);color:var(--ok)}
+.badge.cancelled{background:var(--bad-bg);color:var(--bad)}
+.badge.done{background:var(--paper);color:var(--muted)}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+.health-flags{display:inline-flex;gap:4px}
+.flag{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+
+/* schedule */
+.branch-tabs{display:flex;gap:8px;margin-bottom:18px}
+.weekdays{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.wd{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px}
+.wd.on{background:var(--rose-deep);color:var(--cream);border-color:var(--rose-deep)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.chip{display:flex;align-items:center;gap:8px;background:var(--paper);border-radius:999px;padding:8px 8px 8px 14px;font-family:var(--f-display);font-size:14px}
+.chip button{width:22px;height:22px;border-radius:50%;border:0;background:var(--surface);cursor:pointer;color:var(--muted);font-size:14px;line-height:1}
+.chip-select{background:var(--surface);border:1px solid var(--line);padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px}
+.chip-select.on{background:var(--rose-deep);color:var(--cream);border-color:var(--rose-deep)}
+.disc-badge{display:inline-flex;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:500}
+.disc-badge.active{background:var(--ok-bg);color:var(--ok)}
+.disc-badge.inactive{background:var(--paper);color:var(--muted)}
+.add-slot{display:flex;gap:8px;align-items:center;margin-bottom:18px}
+.add-slot input{width:140px}
+.override-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.override-item{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:12px;padding:10px 14px;font-size:14px}
+.override-item .ov-info{flex:1}
+.override-item b{font-family:var(--f-display)}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+.section-title{font-size:15px;color:var(--muted);margin:0 0 4px}
+hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <form class="login-card" id="login-form">
+    <h1>لوحة تحكم Microblading By Hebah</h1>
+    <p>أدخلي كلمة المرور للوصول إلى الحجوزات والأوقات المتاحة.</p>
+    <div class="field">
+      <label for="pw">كلمة المرور</label>
+      <input type="password" id="pw" required autocomplete="current-password">
+    </div>
+    <button class="btn" type="submit" style="width:100%;margin-top:14px">دخول</button>
+    <div class="login-err" id="login-err"></div>
+  </form>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <h1>Microblading By Hebah — لوحة التحكم</h1>
+    <div class="tabs">
+      <button class="tab on" data-view="bookings">الحجوزات</button>
+      <button class="tab" data-view="schedule">الأوقات المتاحة</button>
+      <button class="tab" data-view="services">الخدمات</button>
+      <button class="tab" data-view="discounts">أكواد الخصم</button>
+      <button class="tab" data-view="account">الحساب</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" id="logout-btn">تسجيل الخروج</button>
+  </div>
+
+  <main>
+    <section class="view on" id="view-bookings">
+      <div class="card">
+        <div class="filters">
+          <select id="f-status">
+            <option value="all">كل الحالات</option>
+            <option value="pending">قيد الانتظار</option>
+            <option value="confirmed">مؤكد</option>
+            <option value="done">مكتمل</option>
+            <option value="cancelled">ملغي</option>
+          </select>
+          <select id="f-branch"><option value="all">كل الفروع</option></select>
+          <input type="search" id="f-q" placeholder="بحث بالاسم، الجوال، أو رقم الحجز">
+          <button class="btn btn-ghost btn-sm" id="refresh-bookings">تحديث</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="bookings-table">
+            <thead><tr>
+              <th>الحجز</th><th>الخدمة</th><th>الفرع</th><th>الموعد</th><th>العميلة</th><th>الجوال</th><th>الدفع</th><th>الحالة</th><th>ملاحظات</th><th></th>
+            </tr></thead>
+            <tbody id="bookings-body"></tbody>
+          </table>
+          <div class="empty" id="bookings-empty" style="display:none">لا توجد حجوزات مطابقة</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-schedule">
+      <div class="card">
+        <div class="branch-tabs" id="schedule-branch-tabs"></div>
+        <h3 class="section-title">الجدول الأسبوعي المتكرر</h3>
+        <p class="hint">اختاري الأيام اللي يفتح فيها هذا الفرع، والأوقات المتاحة في كل يوم من هذي الأيام.</p>
+        <div class="weekdays" id="weekdays"></div>
+        <div class="chips" id="slot-chips"></div>
+        <div class="add-slot">
+          <input type="time" id="new-slot-time">
+          <button class="btn btn-ghost btn-sm" id="add-slot-btn">+ إضافة وقت</button>
+          <label style="display:flex;align-items:center;gap:8px;margin-inline-start:auto;font-size:14px">عدد الحجوزات لكل وقت
+            <input type="number" id="capacity" min="1" style="width:70px">
+          </label>
+        </div>
+        <button class="btn" id="save-schedule">حفظ الجدول</button>
+        <span id="schedule-saved" class="hint" style="display:none;color:var(--ok)">✓ تم الحفظ</span>
+
+        <hr class="sep">
+        <h3 class="section-title">استثناءات تاريخ معيّن</h3>
+        <p class="hint">لمناسبة أو عطلة: حددي تاريخ وخلّيه مغلق بالكامل، أو عطيه أوقات مختلفة عن الجدول الأسبوعي.</p>
+        <div class="row" style="margin-top:12px">
+          <div><label for="ov-date">التاريخ</label><input type="date" id="ov-date"></div>
+          <div><label for="ov-mode">النوع</label><select id="ov-mode"><option value="closed">إغلاق اليوم بالكامل</option><option value="custom">أوقات مخصصة</option></select></div>
+        </div>
+        <div id="ov-custom-wrap" style="display:none;margin-top:12px">
+          <div class="chips" id="ov-slot-chips"></div>
+          <div class="add-slot"><input type="time" id="ov-new-slot"><button class="btn btn-ghost btn-sm" id="ov-add-slot-btn">+ إضافة وقت</button></div>
+        </div>
+        <button class="btn btn-ghost" id="add-override" style="margin-top:8px">إضافة الاستثناء</button>
+        <div class="override-list" id="override-list"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-services">
+      <div class="card">
+        <h3 class="section-title">الخدمات والأسعار</h3>
+        <p class="hint">عدّلي السعر أو الاسم، أو أخفي خدمة مؤقتاً من الموقع.</p>
+        <div id="services-list"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-discounts">
+      <div class="card">
+        <h3 class="section-title">إنشاء كود خصم جديد</h3>
+        <p class="hint">حددي نسبة الخصم، وعلى أي بوابة دفع يسري، وعلى أي خدمة، ومدة صلاحيته.</p>
+        <div class="row" style="margin-top:14px">
+          <div><label for="d-code">الكود</label><input id="d-code" placeholder="مثال: HEBAH10" style="text-transform:uppercase"></div>
+          <div><label for="d-percent">نسبة الخصم %</label><input id="d-percent" type="number" min="1" max="90" value="10"></div>
+          <div><label for="d-gateway">بوابة الدفع</label>
+            <select id="d-gateway">
+              <option value="all">كل طرق الدفع</option>
+              <option value="card">مدى / Apple Pay / بطاقة</option>
+              <option value="tabby">تابي فقط</option>
+              <option value="tamara">تمارا فقط</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div><label for="d-start">تاريخ البداية (اختياري)</label><input type="date" id="d-start"></div>
+          <div><label for="d-end">تاريخ النهاية (اختياري)</label><input type="date" id="d-end"></div>
+        </div>
+        <div style="margin-top:12px">
+          <label>يسري على</label>
+          <div class="chips" id="d-services"></div>
+        </div>
+        <button class="btn" id="d-create" style="margin-top:14px">إنشاء الكود</button>
+        <div class="login-err" id="d-err"></div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">الأكواد الحالية</h3>
+        <div style="overflow-x:auto">
+          <table id="discounts-table">
+            <thead><tr><th>الكود</th><th>النسبة</th><th>بوابة الدفع</th><th>يسري على</th><th>المدة</th><th>الحالة</th><th></th></tr></thead>
+            <tbody id="discounts-body"></tbody>
+          </table>
+          <div class="empty" id="discounts-empty" style="display:none">لا توجد أكواد خصم بعد</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-account">
+      <div class="card" style="max-width:420px">
+        <h3 class="section-title">تغيير كلمة المرور</h3>
+        <div class="field" style="margin-bottom:12px"><label for="cur-pw">كلمة المرور الحالية</label><input type="password" id="cur-pw"></div>
+        <div class="field" style="margin-bottom:14px"><label for="new-pw">كلمة المرور الجديدة</label><input type="password" id="new-pw"></div>
+        <button class="btn" id="change-pw-btn">تغيير كلمة المرور</button>
+        <div class="login-err" id="pw-err"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="admin.js"></script>
+</body>
+</html>

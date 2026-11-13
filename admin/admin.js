@@ -113,7 +113,7 @@ function renderBookings() {
       <td>${esc(b.name)}</td>
       <td dir="ltr">${esc(b.phone)}</td>
       <td>${esc({ tabby: "تابي", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
-      <td><span class="badge ${b.status}">${statusLabel(b.status)}</span></td>
+      <td><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
       <td class="notes-cell">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}</td>
       <td><div class="row-actions">${actions.join("")}</div></td>
     </tr>`;

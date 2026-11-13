@@ -262,6 +262,7 @@ legend{font-family:var(--f-display);font-weight:500;font-size:16px;margin-bottom
       <a href="#branches">الفروع</a>
       <a href="#faq">الأسئلة</a>
     </nav>
+    <button class="btn btn-ghost" id="account-btn" data-account>دخول</button>
     <button class="btn btn-rose" data-book>احجزي موعدك</button>
   </div>
 </header>
@@ -382,6 +383,16 @@ legend{font-family:var(--f-display);font-weight:500;font-size:16px;margin-bottom
   </div>
 </div>
 
+<!-- Account sheet -->
+<div class="sheet" id="asheet" aria-hidden="true">
+  <div class="scrim" data-aclose></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="a-title">
+    <div class="p-head"><h2 id="a-title">حسابي</h2><button class="x" data-aclose aria-label="إغلاق">×</button></div>
+    <div class="p-body" id="abody"></div>
+    <div class="p-foot" id="afoot"></div>
+  </div>
+</div>
+
 <script>
 const WA = "966544936188";
 const fmtN = n => n.toLocaleString("en-US");
@@ -400,7 +411,7 @@ async function api(path, opts){
   return data;
 }
 
-let SERVICES=[], BRANCHES=[];
+let SERVICES=[], BRANCHES=[], CURRENT_CUSTOMER=null;
 const availCache = new Map(); // "branch:year-month" -> {date:[{time,available}]}
 
 async function loadCatalog(){
@@ -482,7 +493,7 @@ loadCatalog();
 const sheet=document.getElementById("sheet"), body=document.getElementById("pbody"), foot=document.getElementById("pfoot");
 const STEPS=["الخدمة","الفرع","الموعد","بياناتك","الدفع"];
 let S, lastFocus;
-function reset(){S={step:0,service:null,branch:null,date:null,time:null,name:"",phone:"",notes:"",health:[],agree:false,pay:null,discount:null,month:new Date(today.getFullYear(),today.getMonth(),1),ref:null,submitting:false,error:""};}
+function reset(){S={step:0,service:null,branch:null,date:null,time:null,name:CURRENT_CUSTOMER?CURRENT_CUSTOMER.name:"",phone:CURRENT_CUSTOMER?CURRENT_CUSTOMER.phone:"",notes:"",health:[],agree:false,pay:null,discount:null,month:new Date(today.getFullYear(),today.getMonth(),1),ref:null,submitting:false,error:""};}
 function open(o={}){reset(); if(o.service) S.service=o.service; if(o.branch) S.branch=o.branch; S.step=S.service?(S.branch?2:1):0;
   lastFocus=document.activeElement; sheet.classList.add("open"); sheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; render(); sheet.querySelector(".x").focus();}
 function close(){sheet.classList.remove("open"); sheet.setAttribute("aria-hidden","true"); document.body.style.overflow=""; lastFocus&&lastFocus.focus();}
@@ -549,9 +560,10 @@ async function stepDate(){
 const HEALTH=["عندي سكري","عندي ضغط دم مرتفع أو منخفض","أستخدم أدوية سيولة الدم","عندي التهاب أو مشكلة جلدية في المنطقة","عندي حساسية من الصبغات","عندي تاتو أو مايكروبليدينق سابق للحواجب"];
 const toLatin=s=>s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d]/g,"");
 function stepDetails(){
+  const phoneLocked=!!CURRENT_CUSTOMER;
   body.innerHTML=`<h3>بياناتك</h3>
   <div class="field" id="f-name"><label for="nm-in">الاسم</label><input id="nm-in" autocomplete="name" value="${esc(S.name)}"><div class="err">اكتبي اسمك</div></div>
-  <div class="field" id="f-phone"><label for="ph-in">رقم الجوال</label><input id="ph-in" inputmode="numeric" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" value="${esc(S.phone)}"><div class="err">اكتبي رقم جوال سعودي يبدأ بـ 05 ومكوّن من 10 أرقام</div></div>
+  <div class="field" id="f-phone"><label for="ph-in">رقم الجوال</label><input id="ph-in" inputmode="numeric" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" value="${esc(S.phone)}" ${phoneLocked?"readonly":""}><div class="err">اكتبي رقم جوال سعودي يبدأ بـ 05 ومكوّن من 10 أرقام</div>${phoneLocked?'<p class="hint" style="margin:6px 0 0">رقم جوال حسابك المسجّل به</p>':""}</div>
   <fieldset><legend>قبل الجلسة، هل ينطبق عليك شي من هذي؟</legend><div class="checks">${HEALTH.map((h,i)=>`<label class="check"><input type="checkbox" data-h="${i}" ${S.health.includes(i)?"checked":""}>${h}</label>`).join("")}</div>
   <div class="box-note" id="hnote">بعض هذي الحالات ممكن ما يناسبها الإجراء حالياً. ننصحك تكلمينا على الواتساب قبل تأكيد موعدك. <a href="https://wa.me/${WA}" target="_blank" rel="noopener">تواصلي معنا</a></div></fieldset>
   <div class="field"><label for="nt-in">ملاحظات (اختياري)</label><textarea id="nt-in" rows="2">${esc(S.notes)}</textarea></div>
@@ -642,6 +654,107 @@ function stepDone(){
   <div class="recap"><div><span>الخدمة</span>${esc(s.name)}</div><div><span>الفرع</span>${esc(br().name)}</div><div><span>الموعد</span>${dLong.format(S.date)}، ${t12(S.time)}</div><div><span>طريقة الدفع</span>${payN}</div><div><span>المبلغ</span>${fmtN(finalPrice)} ريال</div></div>
   <p class="hint" style="margin-bottom:18px">سيتواصل معك فريقنا على الواتساب قريباً لتأكيد الحجز وإتمام الدفع، مع موقع الفرع وتعليمات التحضير.</p></div>`;
   foot.innerHTML=`<a class="btn btn-ghost" style="flex:1" href="https://wa.me/${WA}?text=${msg}" target="_blank" rel="noopener">راسلينا على الواتساب</a><button class="btn btn-rose" style="flex:1" data-close>تم</button>`;
+}
+
+/* account */
+const asheet=document.getElementById("asheet"), abody=document.getElementById("abody"), afoot=document.getElementById("afoot");
+let AV="login"; // login | signup | account
+function updateAccountBtn(){
+  document.getElementById("account-btn").textContent = CURRENT_CUSTOMER ? "حسابي" : "دخول";
+}
+async function refreshMe(){
+  try{ const r=await api("/customers/me"); CURRENT_CUSTOMER = r.authenticated ? r.customer : null; }
+  catch(e){ CURRENT_CUSTOMER=null; }
+  updateAccountBtn();
+}
+refreshMe();
+
+function aOpen(){ AV = CURRENT_CUSTOMER ? "account" : "login"; asheet.classList.add("open"); asheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; aRender(); }
+function aClose(){ asheet.classList.remove("open"); asheet.setAttribute("aria-hidden","true"); document.body.style.overflow=""; }
+document.addEventListener("click",e=>{ if(e.target.closest("[data-account]")) aOpen(); if(e.target.closest("[data-aclose]")) aClose(); });
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&asheet.classList.contains("open")) aClose();});
+
+function aRender(){
+  afoot.innerHTML="";
+  if(AV==="account") return aRenderAccount();
+  if(AV==="signup") return aRenderSignup();
+  return aRenderLogin();
+}
+function aRenderLogin(){
+  document.getElementById("a-title").textContent="تسجيل الدخول";
+  abody.innerHTML=`<div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx"><div class="err">رقم جوال غير صحيح</div></div>
+  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password"><div class="err">اكتبي كلمة المرور</div></div>
+  <div class="box-note" id="a-err"></div>
+  <p class="hint">ما عندك حساب؟ <a href="#" id="a-to-signup">سجّلي واحد جديد</a></p>`;
+  document.getElementById("a-to-signup").onclick=(e)=>{e.preventDefault(); AV="signup"; aRender();};
+  afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">دخول</button>`;
+  document.getElementById("a-submit").onclick=async()=>{
+    const phone=toLatin(val("a-ph")), password=val("a-pw");
+    const okP=/^05\d{8}$/.test(phone);
+    document.getElementById("a-f-phone").classList.toggle("bad",!okP);
+    if(!okP) return;
+    const btn=document.getElementById("a-submit"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+    try{
+      const r=await api("/customers/login",{method:"POST",body:JSON.stringify({phone,password})});
+      CURRENT_CUSTOMER=r.customer; updateAccountBtn(); AV="account"; aRender();
+    }catch(e){
+      const box=document.getElementById("a-err"); box.textContent=e.message; box.classList.add("show");
+      btn.disabled=false; btn.textContent="دخول";
+    }
+  };
+}
+function aRenderSignup(){
+  document.getElementById("a-title").textContent="حساب جديد";
+  abody.innerHTML=`<div class="field" id="a-f-name"><label for="a-nm">الاسم</label><input id="a-nm"><div class="err">اكتبي اسمك</div></div>
+  <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx"><div class="err">رقم جوال غير صحيح</div></div>
+  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password"><div class="err">٦ خانات على الأقل</div></div>
+  <div class="box-note" id="a-err"></div>
+  <p class="hint">عندك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p>`;
+  document.getElementById("a-to-login").onclick=(e)=>{e.preventDefault(); AV="login"; aRender();};
+  afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">إنشاء حساب</button>`;
+  document.getElementById("a-submit").onclick=async()=>{
+    const name=val("a-nm").trim(), phone=toLatin(val("a-ph")), password=val("a-pw");
+    const okN=name.length>=2, okP=/^05\d{8}$/.test(phone), okPw=password.length>=6;
+    document.getElementById("a-f-name").classList.toggle("bad",!okN);
+    document.getElementById("a-f-phone").classList.toggle("bad",!okP);
+    document.getElementById("a-f-pass").classList.toggle("bad",!okPw);
+    if(!okN||!okP||!okPw) return;
+    const btn=document.getElementById("a-submit"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+    try{
+      const r=await api("/customers/signup",{method:"POST",body:JSON.stringify({name,phone,password})});
+      CURRENT_CUSTOMER=r.customer; updateAccountBtn(); AV="account"; aRender();
+    }catch(e){
+      const box=document.getElementById("a-err"); box.textContent=e.message; box.classList.add("show");
+      btn.disabled=false; btn.textContent="إنشاء حساب";
+    }
+  };
+}
+async function aRenderAccount(){
+  document.getElementById("a-title").textContent="حسابي";
+  abody.innerHTML=`<p class="hint" style="margin-top:0">${esc(CURRENT_CUSTOMER.name)} · <span dir="ltr">${esc(CURRENT_CUSTOMER.phone)}</span></p><h3>حجوزاتي</h3><div id="a-bookings"><p class="hint">نحمّل حجوزاتك...</p></div>`;
+  afoot.innerHTML=`<button class="btn btn-ghost" style="flex:1" id="a-logout">تسجيل الخروج</button>`;
+  document.getElementById("a-logout").onclick=async()=>{
+    await api("/customers/logout",{method:"POST"});
+    CURRENT_CUSTOMER=null; updateAccountBtn(); AV="login"; aRender();
+  };
+  let list=[];
+  try{ list=await api("/customers/bookings"); }catch(e){}
+  const el=document.getElementById("a-bookings");
+  if(!list.length){ el.innerHTML='<p class="hint">ما سويتي أي حجز بعد.</p>'; return; }
+  el.innerHTML=list.map(b=>{
+    const price = b.discount ? b.discount.percent+'% خصم، '+fmtN(b.price)+' ريال' : fmtN(b.price)+' ريال';
+    let actions="";
+    if(b.canCancel) actions+=`<button class="btn btn-ghost btn-sm" data-cancel="${b.id}">إلغاء الحجز</button>`;
+    else if(b.canRequestReschedule) actions+= b.rescheduleRequested ? '<span class="hint">تم إرسال طلب التأجيل، بننسق وياك على الواتساب</span>' : `<button class="btn btn-ghost btn-sm" data-resched="${b.id}">طلب تأجيل</button>`;
+    return `<div class="recap" style="margin-bottom:12px"><div><span>الخدمة</span>${esc(b.serviceName)}</div><div><span>الفرع</span>${esc(b.branchName)}</div><div><span>الموعد</span>${dLong.format(new Date(b.date.split('-')[0],b.date.split('-')[1]-1,b.date.split('-')[2]))}، ${t12(b.time)}</div><div><span>الحالة</span><span class="latin" dir="ltr">${({pending:"قيد الانتظار",confirmed:"مؤكد",cancelled:"ملغي",done:"مكتمل"})[b.status]}</span></div><div><span>المبلغ</span>${price}</div></div>${actions?`<div style="margin:-6px 0 16px">${actions}</div>`:""}`;
+  }).join("");
+  el.querySelectorAll("[data-cancel]").forEach(btn=>btn.addEventListener("click",async()=>{
+    if(!confirm("تأكيد إلغاء هذا الحجز؟")) return;
+    try{ await api(`/customers/bookings/${btn.dataset.cancel}/cancel`,{method:"POST"}); aRenderAccount(); }catch(e){ alert(e.message); }
+  }));
+  el.querySelectorAll("[data-resched]").forEach(btn=>btn.addEventListener("click",async()=>{
+    try{ await api(`/customers/bookings/${btn.dataset.resched}/request-reschedule`,{method:"POST"}); aRenderAccount(); }catch(e){ alert(e.message); }
+  }));
 }
 </script>
 </body>

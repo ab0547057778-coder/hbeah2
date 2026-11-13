@@ -164,6 +164,14 @@ footer .wrap{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;
 .foot-small a{text-decoration:none}
 
 .wa-float{position:fixed;left:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 26px rgba(0,0,0,.18)}
+
+.pay-return-banner{position:sticky;top:env(safe-area-inset-top,0px);z-index:55;background:var(--surface);border-bottom:1px solid var(--line)}
+.pay-return-banner .wrap{padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pay-return-banner b{font-family:var(--f-display);font-size:17px}
+.pay-return-banner p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.pay-return-ok b{color:var(--ok)}
+.pay-return-bad b{color:var(--warn)}
+.pay-return-banner .btn{margin-inline-start:auto}
 .wa-float svg{width:30px;height:30px;fill:#fff}
 
 /* booking sheet */
@@ -412,7 +420,33 @@ async function api(path, opts){
 }
 
 let SERVICES=[], BRANCHES=[], CURRENT_CUSTOMER=null;
+let PAYMENT_ENABLED=false;
 const availCache = new Map(); // "branch:year-month" -> {date:[{time,available}]}
+
+api("/payment-config").then(c=>{ PAYMENT_ENABLED = !!c.enabled; }).catch(()=>{});
+
+// If we just came back from Moyasar's hosted payment page, show the real
+// server-confirmed result instead of trusting the URL alone.
+(function checkPaymentReturn(){
+  const params = new URLSearchParams(location.search);
+  const ref = params.get("paid_ref");
+  if(!ref) return;
+  history.replaceState(null, "", location.pathname);
+  const banner = document.createElement("div");
+  banner.className = "pay-return-banner";
+  banner.innerHTML = '<div class="wrap"><p class="hint">نتحقق من حالة الدفع...</p></div>';
+  document.body.prepend(banner);
+  api(`/bookings/ref/${encodeURIComponent(ref)}`).then(b=>{
+    const ok = b.paid;
+    banner.innerHTML = `<div class="wrap pay-return-${ok?"ok":"bad"}">
+      <b>${ok?"تم الدفع بنجاح ✓":"لم نتمكن من تأكيد الدفع"}</b>
+      <p>${esc(b.serviceName)} — ${esc(b.branchName)} — رقم الحجز <span dir="ltr">${esc(b.ref)}</span></p>
+      ${ok?"":'<p>إذا تم الخصم من حسابك، راسلينا على الواتساب برقم الحجز وبنتأكد يدوياً.</p>'}
+      <button class="btn btn-ghost btn-sm" id="pay-return-close">إغلاق</button>
+    </div>`;
+    document.getElementById("pay-return-close").onclick=()=>banner.remove();
+  }).catch(()=>{ banner.remove(); });
+})();
 
 async function loadCatalog(){
   try{
@@ -590,7 +624,9 @@ function stepPay(){
   const s=svc();
   body.innerHTML=`<div class="recap" id="pay-recap"><div><span>الخدمة</span>${esc(s.name)}</div><div><span>الفرع</span>${esc(br().name)}</div><div><span>الموعد</span>${dLong.format(S.date)}، ${t12(S.time)}</div><div><span>الاسم</span>${esc(S.name)}</div>${totalLine(s)}</div>
   <h3>طريقة الدفع المفضّلة</h3>`+PAYS.map(p=>`<button class="opt" data-v="${p.id}" aria-pressed="${S.pay===p.id}"><span class="dot"></span><span class="t"><b>${p.n}</b><small>${p.d}</small></span></button>`).join("")
-  +`<p class="hint">هذا تفضيلك فقط — بعد تأكيد الحجز يتواصل معك فريقنا على الواتساب لإتمام الدفع الآمن.</p>`
+  +(PAYMENT_ENABLED
+      ? '<p class="hint">بعد الضغط على "ادفعي الآن" بتنتقلين لصفحة دفع آمنة لإتمام العملية.</p>'
+      : '<p class="hint">هذا تفضيلك فقط — بعد تأكيد الحجز يتواصل معك فريقنا على الواتساب لإتمام الدفع الآمن.</p>')
   +`<div class="field" style="margin-top:18px"><label for="disc-in">كود الخصم (اختياري)</label>
       <div style="display:flex;gap:8px"><input id="disc-in" style="text-transform:uppercase" value="${S.discount?esc(S.discount.code):""}"><button type="button" class="btn btn-ghost" id="disc-apply">تطبيق</button></div>
       <div class="hint" id="disc-msg">${S.discount?`تم تطبيق خصم ${S.discount.percent}%`:""}</div></div>`
@@ -600,7 +636,7 @@ function stepPay(){
     if(S.discount){ S.discount=null; document.getElementById("disc-msg").textContent="غيّرتي طريقة الدفع، طبّقي الكود مرة أخرى"; refreshPayRecap(); }
   });
   document.getElementById("disc-apply").onclick=applyDiscount;
-  footer(!!S.pay,"تأكيد الحجز",submitBooking);
+  footer(!!S.pay,PAYMENT_ENABLED?"ادفعي الآن":"تأكيد الحجز",submitBooking);
 }
 function refreshPayRecap(){
   const s=svc();
@@ -631,7 +667,15 @@ async function submitBooking(){
       name:S.name, phone:S.phone, notes:S.notes, health:S.health, pay:S.pay,
       discountCode: S.discount ? S.discount.code : undefined
     })});
-    S.ref=r.ref; S.submitting=false; go(5);
+    S.ref=r.ref;
+    if(r.paymentUrl){ location.href=r.paymentUrl; return; }
+    S.submitting=false;
+    if(r.paymentError){
+      go(5);
+      body.insertAdjacentHTML("afterbegin",'<div class="box-note show">تم حفظ حجزك، لكن تعذر فتح صفحة الدفع الآن. راسلينا على الواتساب برقم الحجز لإتمام الدفع.</div>');
+      return;
+    }
+    go(5);
   }catch(e){
     S.submitting=false;
     const box=document.getElementById("submit-err");

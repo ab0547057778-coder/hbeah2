@@ -420,10 +420,11 @@ async function api(path, opts){
 }
 
 let SERVICES=[], BRANCHES=[], CURRENT_CUSTOMER=null;
-let PAYMENT_ENABLED=false;
+let PAYMENT_CONFIG={card:false,tabby:false,tamara:false};
 const availCache = new Map(); // "branch:year-month" -> {date:[{time,available}]}
 
-api("/payment-config").then(c=>{ PAYMENT_ENABLED = !!c.enabled; }).catch(()=>{});
+api("/payment-config").then(c=>{ PAYMENT_CONFIG=c; }).catch(()=>{});
+function isPayLive(method){ return !!PAYMENT_CONFIG[method]; }
 
 // If we just came back from Moyasar's hosted payment page, show the real
 // server-confirmed result instead of trusting the URL alone.
@@ -620,23 +621,28 @@ function totalLine(s){
   if(S.discount) return `<div><span>الإجمالي</span><b class="tot"><span style="text-decoration:line-through;color:var(--muted);font-size:14px;margin-inline-end:8px">${fmtN(s.price)}</span>${fmtN(S.discount.finalPrice)} ريال</b></div>`;
   return `<div><span>الإجمالي</span><b class="tot">${fmtN(s.price)} ريال</b></div>`;
 }
+function payHint(){
+  return isPayLive(S.pay)
+    ? '<p class="hint">بعد الضغط على "ادفعي الآن" بتنتقلين لصفحة دفع آمنة لإتمام العملية.</p>'
+    : '<p class="hint">هذا تفضيلك فقط — بعد تأكيد الحجز يتواصل معك فريقنا على الواتساب لإتمام الدفع الآمن.</p>';
+}
 function stepPay(){
   const s=svc();
   body.innerHTML=`<div class="recap" id="pay-recap"><div><span>الخدمة</span>${esc(s.name)}</div><div><span>الفرع</span>${esc(br().name)}</div><div><span>الموعد</span>${dLong.format(S.date)}، ${t12(S.time)}</div><div><span>الاسم</span>${esc(S.name)}</div>${totalLine(s)}</div>
-  <h3>طريقة الدفع المفضّلة</h3>`+PAYS.map(p=>`<button class="opt" data-v="${p.id}" aria-pressed="${S.pay===p.id}"><span class="dot"></span><span class="t"><b>${p.n}</b><small>${p.d}</small></span></button>`).join("")
-  +(PAYMENT_ENABLED
-      ? '<p class="hint">بعد الضغط على "ادفعي الآن" بتنتقلين لصفحة دفع آمنة لإتمام العملية.</p>'
-      : '<p class="hint">هذا تفضيلك فقط — بعد تأكيد الحجز يتواصل معك فريقنا على الواتساب لإتمام الدفع الآمن.</p>')
+  <h3>طريقة الدفع</h3>`+PAYS.map(p=>`<button class="opt" data-v="${p.id}" aria-pressed="${S.pay===p.id}"><span class="dot"></span><span class="t"><b>${p.n}</b><small>${p.d}</small></span></button>`).join("")
+  +`<p class="hint" id="pay-hint">${S.pay?payHint():""}</p>`
   +`<div class="field" style="margin-top:18px"><label for="disc-in">كود الخصم (اختياري)</label>
       <div style="display:flex;gap:8px"><input id="disc-in" style="text-transform:uppercase" value="${S.discount?esc(S.discount.code):""}"><button type="button" class="btn btn-ghost" id="disc-apply">تطبيق</button></div>
       <div class="hint" id="disc-msg">${S.discount?`تم تطبيق خصم ${S.discount.percent}%`:""}</div></div>`
   +`<div class="box-note" id="submit-err"></div>`;
   body.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
-    S.pay=b.dataset.v; body.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed",x===b)); document.getElementById("next").disabled=false;
+    S.pay=b.dataset.v; body.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    document.getElementById("pay-hint").innerHTML=payHint();
+    footer(true,isPayLive(S.pay)?"ادفعي الآن":"تأكيد الحجز",submitBooking);
     if(S.discount){ S.discount=null; document.getElementById("disc-msg").textContent="غيّرتي طريقة الدفع، طبّقي الكود مرة أخرى"; refreshPayRecap(); }
   });
   document.getElementById("disc-apply").onclick=applyDiscount;
-  footer(!!S.pay,PAYMENT_ENABLED?"ادفعي الآن":"تأكيد الحجز",submitBooking);
+  footer(!!S.pay,S.pay&&isPayLive(S.pay)?"ادفعي الآن":"تأكيد الحجز",submitBooking);
 }
 function refreshPayRecap(){
   const s=svc();

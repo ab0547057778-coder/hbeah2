@@ -411,6 +411,7 @@ async function loadServices() {
     <div class="card" style="margin-bottom:12px;padding:16px">
       <div class="row">
         <div><label>الاسم</label><input data-f="name" data-id="${s.id}" value="${esc(s.name)}"></div>
+        <div style="flex:1 1 100%"><label>الوصف</label><textarea data-f="desc" data-id="${s.id}" rows="2">${esc(s.desc || "")}</textarea></div>
         <div><label>السعر (ريال)</label><input data-f="price" data-id="${s.id}" type="number" value="${s.price}"></div>
         <div><label>مدة الجلسة (دقيقة)</label><input data-f="durationMin" data-id="${s.id}" type="number" min="5" step="5" value="${s.durationMin || 60}"></div>
         <div style="flex:0 0 auto;align-self:center;margin-top:18px">
@@ -422,11 +423,12 @@ async function loadServices() {
   el.querySelectorAll("[data-save]").forEach(btn => btn.addEventListener("click", async () => {
     const id = btn.dataset.save;
     const name = el.querySelector(`[data-f=name][data-id="${id}"]`).value;
+    const desc = el.querySelector(`[data-f=desc][data-id="${id}"]`).value;
     const price = el.querySelector(`[data-f=price][data-id="${id}"]`).value;
     const durationMin = el.querySelector(`[data-f=durationMin][data-id="${id}"]`).value;
     const active = el.querySelector(`[data-f=active][data-id="${id}"]`).checked;
     try {
-      await api(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify({ name, price, durationMin, active }) });
+      await api(`/admin/services/${id}`, { method: "PUT", body: JSON.stringify({ name, desc, price, durationMin, active }) });
       toast("تم الحفظ");
     } catch (e) { toast(e.message); }
   }));

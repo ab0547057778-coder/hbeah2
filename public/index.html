@@ -256,6 +256,18 @@ legend{font-family:var(--f-display);font-weight:500;font-size:16px;margin-bottom
 .spin{width:18px;height:18px;border-radius:50%;border:2px solid currentColor;border-inline-end-color:transparent;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* auth sheet */
+.a-avatar{width:72px;height:72px;margin:6px auto 18px;filter:drop-shadow(0 10px 20px rgba(138,95,85,.2))}
+.a-head{text-align:center;margin-bottom:28px}
+.a-head h3{font-family:var(--f-display);font-weight:500;font-size:22px;margin:0 0 6px}
+.a-head p{color:var(--muted);font-size:14px;margin:0}
+.aview{animation:aFade .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes aFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.a-switch{text-align:center;margin-top:18px;font-size:14px;color:var(--muted)}
+.a-switch a{color:var(--rose-deep);text-decoration:none;font-weight:500}
+.a-switch a:hover{text-decoration:underline}
+.a-gate-note{background:var(--paper);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted);margin:0 0 22px;text-align:center}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 </style>
 </head>
@@ -386,6 +398,7 @@ legend{font-family:var(--f-display);font-weight:500;font-size:16px;margin-bottom
       <a class="soc" href="https://snapchat.com/t/3Ijc4blG" target="_blank" rel="noopener" aria-label="سناب شات"><svg viewBox="0 0 24 24"><path d="M12.1 2.5c2.3 0 4.3 1.3 5.2 3.4.4.9.3 2.4.2 3.6v.4l1.3-.5c.4 0 .9.2.9.6 0 .4-.4.6-1.1.9-.7.3-1.4.4-1.5.9 0 .3.1.6.3 1 .7 1.4 2 2.7 3.6 3 .2 0 .4.3.3.5-.2.6-1.6.9-2.4 1-.1.2-.1.8-.4 1-.3.2-1.3-.2-2.4 0-1.2.2-2 1.8-4.1 1.8s-2.9-1.6-4.1-1.8c-1.1-.2-2.1.2-2.4 0-.3-.2-.3-.8-.4-1-.8-.1-2.2-.4-2.4-1-.1-.2.1-.5.3-.5 1.6-.3 2.9-1.6 3.6-3 .2-.4.3-.7.3-1-.1-.5-.8-.6-1.5-.9-.7-.3-1.1-.5-1.1-.9 0-.4.5-.6.9-.6l1.3.5v-.4c-.1-1.2-.2-2.7.2-3.6.9-2.1 2.9-3.4 5.2-3.4h.6Z"/></svg></a>
     </div>
   </div>
+  <div class="wrap"><p class="foot-small" dir="ltr" style="text-align:center;margin-top:28px">Developed by aood99ad</p></div>
 </footer>
 
 <a class="wa-float" href="https://wa.me/966544936188" target="_blank" rel="noopener" aria-label="تواصلي معنا على الواتساب"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 2.9 2.9 0 0 0-.9 2.2 5 5 0 0 0 1 2.7 11.5 11.5 0 0 0 4.4 3.9c1.6.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.6-.3Z"/></svg></a>
@@ -543,7 +556,15 @@ function reset(){S={step:0,service:null,branch:null,date:null,time:null,name:CUR
 function open(o={}){reset(); if(o.service) S.service=o.service; if(o.branch) S.branch=o.branch; S.step=S.service?(S.branch?2:1):0;
   lastFocus=document.activeElement; sheet.classList.add("open"); sheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; render(); sheet.querySelector(".x").focus();}
 function close(){sheet.classList.remove("open"); sheet.setAttribute("aria-hidden","true"); document.body.style.overflow=""; lastFocus&&lastFocus.focus();}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-book]"); if(b){e.preventDefault(); open({service:b.dataset.service,branch:b.dataset.branch});} if(e.target.closest("[data-close]")) close();});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-book]");
+  if(b){
+    e.preventDefault();
+    const intent={service:b.dataset.service,branch:b.dataset.branch};
+    if(CURRENT_CUSTOMER) open(intent); else aOpen(intent);
+  }
+  if(e.target.closest("[data-close]")) close();
+});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet.classList.contains("open")) close();});
 const svc=()=>SERVICES.find(s=>s.id===S.service), br=()=>BRANCHES.find(b=>b.id===S.branch);
 
@@ -635,7 +656,7 @@ function totalLine(s){
 function payHint(){
   return isPayLive(S.pay)
     ? '<p class="hint">بعد الضغط على "ادفعي الآن" بتنتقلين لصفحة دفع آمنة لإتمام العملية.</p>'
-    : '<p class="hint">هذا تفضيلك فقط — بعد تأكيد الحجز يتواصل معك فريقنا على الواتساب لإتمام الدفع الآمن.</p>';
+    : '';
 }
 function stepPay(){
   const s=svc();
@@ -720,6 +741,8 @@ function stepDone(){
 /* account */
 const asheet=document.getElementById("asheet"), abody=document.getElementById("abody"), afoot=document.getElementById("afoot");
 let AV="login"; // login | signup | account
+let PENDING_BOOKING=null; // {service,branch} to open right after a gated login succeeds
+const AVATAR_SVG=`<svg class="a-avatar" viewBox="0 0 200 200" role="img" aria-label="Microblading By Hebah"><defs><radialGradient id="avGrad" cx="35%" cy="30%" r="80%"><stop offset="0%" stop-color="var(--rose)"/><stop offset="100%" stop-color="var(--rose-deep)"/></radialGradient></defs><circle cx="100" cy="100" r="100" fill="url(#avGrad)"/><text x="97" y="122" text-anchor="middle" font-family="Marcellus,serif" font-size="108" fill="var(--cream)">H</text></svg>`;
 function updateAccountBtn(){
   document.getElementById("account-btn").textContent = CURRENT_CUSTOMER ? "حسابي" : "دخول";
 }
@@ -730,23 +753,39 @@ async function refreshMe(){
 }
 refreshMe();
 
-function aOpen(){ AV = CURRENT_CUSTOMER ? "account" : "login"; asheet.classList.add("open"); asheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; aRender(); }
-function aClose(){ asheet.classList.remove("open"); asheet.setAttribute("aria-hidden","true"); document.body.style.overflow=""; }
+function aOpen(gate){
+  PENDING_BOOKING = gate || null;
+  AV = CURRENT_CUSTOMER ? "account" : "login";
+  asheet.classList.add("open"); asheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; aRender();
+}
+function aClose(){ asheet.classList.remove("open"); asheet.setAttribute("aria-hidden","true"); document.body.style.overflow=""; PENDING_BOOKING=null; }
 document.addEventListener("click",e=>{ if(e.target.closest("[data-account]")) aOpen(); if(e.target.closest("[data-aclose]")) aClose(); });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&asheet.classList.contains("open")) aClose();});
 
+function onAuthed(){
+  updateAccountBtn();
+  if(PENDING_BOOKING){
+    const gate=PENDING_BOOKING; PENDING_BOOKING=null;
+    aClose(); open(gate);
+  } else { AV="account"; aRender(); }
+}
 function aRender(){
   afoot.innerHTML="";
   if(AV==="account") return aRenderAccount();
   if(AV==="signup") return aRenderSignup();
   return aRenderLogin();
 }
+function gateNote(){
+  return PENDING_BOOKING ? '<p class="a-gate-note">سجّلي دخولك أو أنشئي حساب لتكملي حجزك — نحفظ لك حجوزاتك كلها بمكان وحد.</p>' : "";
+}
 function aRenderLogin(){
   document.getElementById("a-title").textContent="تسجيل الدخول";
-  abody.innerHTML=`<div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx"><div class="err">رقم جوال غير صحيح</div></div>
-  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password"><div class="err">اكتبي كلمة المرور</div></div>
+  abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>مرحباً بعودتك</h3><p>سجّلي دخولك لمتابعة حجوزاتك</p></div>
+  ${gateNote()}
+  <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
+  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="current-password"><div class="err">اكتبي كلمة المرور</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="hint">ما عندك حساب؟ <a href="#" id="a-to-signup">سجّلي واحد جديد</a></p>`;
+  <p class="a-switch">ما عندك حساب؟ <a href="#" id="a-to-signup">سجّلي واحد جديد</a></p></div>`;
   document.getElementById("a-to-signup").onclick=(e)=>{e.preventDefault(); AV="signup"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">دخول</button>`;
   document.getElementById("a-submit").onclick=async()=>{
@@ -757,7 +796,7 @@ function aRenderLogin(){
     const btn=document.getElementById("a-submit"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
     try{
       const r=await api("/customers/login",{method:"POST",body:JSON.stringify({phone,password})});
-      CURRENT_CUSTOMER=r.customer; updateAccountBtn(); AV="account"; aRender();
+      CURRENT_CUSTOMER=r.customer; onAuthed();
     }catch(e){
       const box=document.getElementById("a-err"); box.textContent=e.message; box.classList.add("show");
       btn.disabled=false; btn.textContent="دخول";
@@ -766,24 +805,29 @@ function aRenderLogin(){
 }
 function aRenderSignup(){
   document.getElementById("a-title").textContent="حساب جديد";
-  abody.innerHTML=`<div class="field" id="a-f-name"><label for="a-nm">الاسم</label><input id="a-nm"><div class="err">اكتبي اسمك</div></div>
-  <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx"><div class="err">رقم جوال غير صحيح</div></div>
-  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password"><div class="err">٦ خانات على الأقل</div></div>
+  const maxDob=new Date(); maxDob.setFullYear(maxDob.getFullYear()-10);
+  abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>انشئي حسابك</h3><p>خطوة وحدة قبل ما نبدأ حجزك</p></div>
+  ${gateNote()}
+  <div class="field" id="a-f-name"><label for="a-nm">الاسم</label><input id="a-nm" autocomplete="name"><div class="err">اكتبي اسمك</div></div>
+  <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
+  <div class="field" id="a-f-dob"><label for="a-dob">تاريخ الميلاد</label><input id="a-dob" type="date" max="${maxDob.toISOString().slice(0,10)}"><div class="err">تاريخ ميلاد غير صحيح</div></div>
+  <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="new-password"><div class="err">٦ خانات على الأقل</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="hint">عندك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p>`;
+  <p class="a-switch">عندك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p></div>`;
   document.getElementById("a-to-login").onclick=(e)=>{e.preventDefault(); AV="login"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">إنشاء حساب</button>`;
   document.getElementById("a-submit").onclick=async()=>{
-    const name=val("a-nm").trim(), phone=toLatin(val("a-ph")), password=val("a-pw");
-    const okN=name.length>=2, okP=/^05\d{8}$/.test(phone), okPw=password.length>=6;
+    const name=val("a-nm").trim(), phone=toLatin(val("a-ph")), password=val("a-pw"), dob=val("a-dob");
+    const okN=name.length>=2, okP=/^05\d{8}$/.test(phone), okPw=password.length>=6, okDob=!!dob;
     document.getElementById("a-f-name").classList.toggle("bad",!okN);
     document.getElementById("a-f-phone").classList.toggle("bad",!okP);
+    document.getElementById("a-f-dob").classList.toggle("bad",!okDob);
     document.getElementById("a-f-pass").classList.toggle("bad",!okPw);
-    if(!okN||!okP||!okPw) return;
+    if(!okN||!okP||!okDob||!okPw) return;
     const btn=document.getElementById("a-submit"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
     try{
-      const r=await api("/customers/signup",{method:"POST",body:JSON.stringify({name,phone,password})});
-      CURRENT_CUSTOMER=r.customer; updateAccountBtn(); AV="account"; aRender();
+      const r=await api("/customers/signup",{method:"POST",body:JSON.stringify({name,phone,password,dob})});
+      CURRENT_CUSTOMER=r.customer; onAuthed();
     }catch(e){
       const box=document.getElementById("a-err"); box.textContent=e.message; box.classList.add("show");
       btn.disabled=false; btn.textContent="إنشاء حساب";
@@ -792,7 +836,7 @@ function aRenderSignup(){
 }
 async function aRenderAccount(){
   document.getElementById("a-title").textContent="حسابي";
-  abody.innerHTML=`<p class="hint" style="margin-top:0">${esc(CURRENT_CUSTOMER.name)} · <span dir="ltr">${esc(CURRENT_CUSTOMER.phone)}</span></p><h3>حجوزاتي</h3><div id="a-bookings"><p class="hint">نحمّل حجوزاتك...</p></div>`;
+  abody.innerHTML=`<div class="aview"><p class="hint" style="margin-top:0">${esc(CURRENT_CUSTOMER.name)} · <span dir="ltr">${esc(CURRENT_CUSTOMER.phone)}</span></p><h3>حجوزاتي</h3><div id="a-bookings"><p class="hint">نحمّل حجوزاتك...</p></div></div>`;
   afoot.innerHTML=`<button class="btn btn-ghost" style="flex:1" id="a-logout">تسجيل الخروج</button>`;
   document.getElementById("a-logout").onclick=async()=>{
     await api("/customers/logout",{method:"POST"});

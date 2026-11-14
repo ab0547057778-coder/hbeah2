@@ -100,6 +100,26 @@ td.notes-cell{white-space:normal;max-width:220px;color:var(--muted);font-size:13
 .hint{color:var(--muted);font-size:13px;margin:4px 0 0}
 .section-title{font-size:15px;color:var(--muted);margin:0 0 4px}
 hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
+
+/* date-specific calendar */
+.ov-cal-head{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px}
+.ov-cal-head b{font-family:var(--f-display);font-weight:500}
+.ov-cal-nav{display:flex;gap:6px}
+.ov-cal-nav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.ov-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-bottom:16px}
+.ov-cal .dow{font-size:12px;color:var(--muted);padding:4px 0}
+.ov-day{position:relative;aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-family:var(--f-display);font-size:14px;cursor:pointer;color:var(--ink)}
+.ov-day:hover{border-color:var(--rose)}
+.ov-day.past{opacity:.35;cursor:default;border-style:dashed}
+.ov-day.sel{background:var(--rose-deep);color:var(--cream);border-color:var(--rose-deep)}
+.ov-day .dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%}
+.ov-day.st-custom .dot{background:var(--ok)}
+.ov-day.st-closed .dot{background:var(--bad)}
+.ov-legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:18px}
+.ov-legend span{display:flex;align-items:center;gap:6px}
+.ov-legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ov-editor{background:var(--paper);border-radius:14px;padding:16px}
+.ov-editor h4{font-family:var(--f-display);font-weight:500;font-size:16px;margin:0 0 10px}
 </style>
 </head>
 <body>
@@ -176,18 +196,16 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
         <span id="schedule-saved" class="hint" style="display:none;color:var(--ok)">✓ تم الحفظ</span>
 
         <hr class="sep">
-        <h3 class="section-title">استثناءات تاريخ معيّن</h3>
-        <p class="hint">لمناسبة أو عطلة: حددي تاريخ وخلّيه مغلق بالكامل، أو عطيه أوقات مختلفة عن الجدول الأسبوعي.</p>
-        <div class="row" style="margin-top:12px">
-          <div><label for="ov-date">التاريخ</label><input type="date" id="ov-date"></div>
-          <div><label for="ov-mode">النوع</label><select id="ov-mode"><option value="closed">إغلاق اليوم بالكامل</option><option value="custom">أوقات مخصصة</option></select></div>
+        <h3 class="section-title">أوقات حسب التاريخ</h3>
+        <p class="hint">اختاري أي يوم من التقويم مباشرة عشان تخصّصين له أوقات معيّنة أو تغلقينه بالكامل — مو بس حسب اسم اليوم.</p>
+        <div class="ov-cal-head"><b id="ov-cal-label"></b><div class="ov-cal-nav"><button id="ov-pm" aria-label="الشهر السابق">›</button><button id="ov-nm" aria-label="الشهر التالي">‹</button></div></div>
+        <div class="ov-cal" id="ov-cal"></div>
+        <div class="ov-legend">
+          <span><i style="background:var(--ok)"></i>أوقات مخصصة</span>
+          <span><i style="background:var(--bad)"></i>مغلق</span>
+          <span><i style="border:1px solid var(--line)"></i>الجدول الافتراضي</span>
         </div>
-        <div id="ov-custom-wrap" style="display:none;margin-top:12px">
-          <div class="chips" id="ov-slot-chips"></div>
-          <div class="add-slot"><input type="time" id="ov-new-slot"><button class="btn btn-ghost btn-sm" id="ov-add-slot-btn">+ إضافة وقت</button></div>
-        </div>
-        <button class="btn btn-ghost" id="add-override" style="margin-top:8px">إضافة الاستثناء</button>
-        <div class="override-list" id="override-list"></div>
+        <div class="ov-editor" id="ov-editor" style="display:none"></div>
       </div>
     </section>
 

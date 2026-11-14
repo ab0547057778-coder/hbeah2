@@ -71,6 +71,7 @@ async function boot() {
   currentBranch = BRANCHES[0] && BRANCHES[0].id;
   document.querySelectorAll("#schedule-branch-tabs [data-branch]").forEach(btn => btn.addEventListener("click", () => {
     currentBranch = btn.dataset.branch;
+    ovSelected = null;
     document.querySelectorAll("#schedule-branch-tabs [data-branch]").forEach(b => b.classList.toggle("btn-ghost", b !== btn));
     renderSchedule();
   }));
@@ -173,51 +174,114 @@ document.getElementById("save-schedule").addEventListener("click", async () => {
   } catch (e) { toast(e.message); }
 });
 
-// overrides
-let ovSlots = [];
-document.getElementById("ov-mode").addEventListener("change", e => {
-  document.getElementById("ov-custom-wrap").style.display = e.target.value === "custom" ? "block" : "none";
-});
-document.getElementById("ov-add-slot-btn").addEventListener("click", () => {
-  const input = document.getElementById("ov-new-slot");
-  if (!input.value || ovSlots.includes(input.value)) return;
-  ovSlots.push(input.value); ovSlots.sort(); input.value = ""; renderOvSlots();
-});
-function renderOvSlots() {
-  document.getElementById("ov-slot-chips").innerHTML = ovSlots.map(t =>
+// ---------- date-specific calendar ----------
+const ovDLong = new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { weekday: "long", day: "numeric", month: "long" });
+const ovMName = new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { month: "long", year: "numeric" });
+const ovKey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const ovToday = new Date(); ovToday.setHours(0, 0, 0, 0);
+let ovMonth = new Date(ovToday.getFullYear(), ovToday.getMonth(), 1);
+let ovSelected = null; // date key string
+let ovEditSlots = [];
+
+function renderOverrides() { renderOvCalendar(); }
+
+function renderOvCalendar() {
+  const y = ovMonth.getFullYear(), mo = ovMonth.getMonth();
+  document.getElementById("ov-cal-label").textContent = ovMName.format(ovMonth);
+  const sched = (scheduleState.schedule[currentBranch]) || { weekdays: [], slots: [] };
+  const overrides = scheduleState.overrides[currentBranch] || {};
+  const first = new Date(y, mo, 1), days = new Date(y, mo + 1, 0).getDate();
+  const lead = (first.getDay() + 1) % 7;
+  const dows = ["س", "ح", "ن", "ث", "ر", "خ", "ج"];
+  let cells = dows.map(d => `<div class="dow">${d}</div>`).join("") + "<div></div>".repeat(lead);
+  for (let d = 1; d <= days; d++) {
+    const dt = new Date(y, mo, d), key = ovKey(dt), isPast = dt < ovToday;
+    const ov = overrides[key];
+    const stClass = ov ? (ov.closed ? "st-closed" : "st-custom") : "";
+    const sel = ovSelected === key ? "sel" : "";
+    cells += `<button class="ov-day ${stClass} ${sel} ${isPast ? "past" : ""}" ${isPast ? "disabled" : `data-ovd="${key}"`}>${d}<span class="dot"></span></button>`;
+  }
+  document.getElementById("ov-cal").innerHTML = cells;
+  document.querySelectorAll("#ov-cal [data-ovd]").forEach(btn => btn.addEventListener("click", () => {
+    ovSelected = btn.dataset.ovd; renderOvCalendar(); renderOvEditor();
+  }));
+  if (ovSelected) renderOvEditor(); else document.getElementById("ov-editor").style.display = "none";
+}
+document.getElementById("ov-pm").addEventListener("click", () => { ovMonth = new Date(ovMonth.getFullYear(), ovMonth.getMonth() - 1, 1); renderOvCalendar(); });
+document.getElementById("ov-nm").addEventListener("click", () => { ovMonth = new Date(ovMonth.getFullYear(), ovMonth.getMonth() + 1, 1); renderOvCalendar(); });
+
+function renderOvEditor() {
+  const el = document.getElementById("ov-editor");
+  el.style.display = "block";
+  const [y, m, d] = ovSelected.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const sched = scheduleState.schedule[currentBranch] || { weekdays: [], slots: [] };
+  const ov = (scheduleState.overrides[currentBranch] || {})[ovSelected];
+  const defaultSlots = sched.weekdays.includes(dt.getDay()) ? sched.slots : [];
+
+  if (!ov) {
+    ovEditSlots = [];
+    el.innerHTML = `<h4>${ovDLong.format(dt)}</h4>
+      <p class="hint" style="margin-bottom:14px">يتبع الجدول الافتراضي حالياً: ${defaultSlots.length ? defaultSlots.map(t12).join("، ") : "مغلق (مو ضمن أيام الدوام)"}</p>
+      <button class="btn btn-ghost btn-sm" id="ov-mk-custom">تخصيص أوقات هذا اليوم</button>
+      <button class="btn btn-ghost btn-sm" id="ov-mk-closed">إغلاق هذا اليوم بالكامل</button>`;
+    document.getElementById("ov-mk-custom").onclick = () => { ovEditSlots = [...defaultSlots]; renderOvCustomForm(dt); };
+    document.getElementById("ov-mk-closed").onclick = async () => {
+      try { await api("/admin/overrides", { method: "POST", body: JSON.stringify({ branch: currentBranch, date: ovSelected, closed: true }) }); toast("تم إغلاق اليوم"); loadSchedule(); }
+      catch (e) { toast(e.message); }
+    };
+    return;
+  }
+
+  if (ov.closed) {
+    el.innerHTML = `<h4>${ovDLong.format(dt)}</h4><p class="hint" style="margin-bottom:14px">هذا اليوم مغلق بالكامل.</p>
+      <button class="btn btn-ghost btn-sm" id="ov-mk-custom2">تخصيص أوقات بدل الإغلاق</button>
+      <button class="btn btn-ghost btn-sm" id="ov-clear">رجّعيه للجدول الافتراضي</button>`;
+    document.getElementById("ov-mk-custom2").onclick = () => { ovEditSlots = [...defaultSlots]; renderOvCustomForm(dt); };
+    document.getElementById("ov-clear").onclick = () => clearOverride();
+    return;
+  }
+
+  ovEditSlots = [...ov.slots];
+  renderOvCustomForm(dt, true);
+}
+
+function renderOvCustomForm(dt, hasOverride) {
+  const el = document.getElementById("ov-editor");
+  el.innerHTML = `<h4>${ovDLong.format(dt)}</h4>
+    <div class="chips" id="ov-slot-chips"></div>
+    <div class="add-slot"><input type="time" id="ov-new-slot"><button class="btn btn-ghost btn-sm" id="ov-add-slot-btn">+ إضافة وقت</button></div>
+    <button class="btn" id="ov-save-custom">حفظ أوقات هذا اليوم</button>
+    ${hasOverride ? '<button class="btn btn-ghost btn-sm" id="ov-clear">رجّعيه للجدول الافتراضي</button>' : ""}`;
+  renderOvSlotChips();
+  document.getElementById("ov-add-slot-btn").onclick = () => {
+    const input = document.getElementById("ov-new-slot");
+    if (!input.value || ovEditSlots.includes(input.value)) return;
+    ovEditSlots.push(input.value); ovEditSlots.sort(); input.value = ""; renderOvSlotChips();
+  };
+  document.getElementById("ov-save-custom").onclick = async () => {
+    if (!ovEditSlots.length) return toast("أضيفي وقت واحد على الأقل");
+    try {
+      await api("/admin/overrides", { method: "POST", body: JSON.stringify({ branch: currentBranch, date: ovSelected, closed: false, slots: ovEditSlots }) });
+      toast("تم حفظ أوقات هذا اليوم");
+      loadSchedule();
+    } catch (e) { toast(e.message); }
+  };
+  if (hasOverride) document.getElementById("ov-clear").onclick = () => clearOverride();
+}
+function renderOvSlotChips() {
+  document.getElementById("ov-slot-chips").innerHTML = ovEditSlots.map(t =>
     `<span class="chip">${t12(t)}<button data-ovrm="${t}">×</button></span>`).join("") || '<span class="hint">أضيفي وقت واحد على الأقل</span>';
   document.querySelectorAll("[data-ovrm]").forEach(btn => btn.addEventListener("click", () => {
-    ovSlots = ovSlots.filter(t => t !== btn.dataset.ovrm); renderOvSlots();
+    ovEditSlots = ovEditSlots.filter(t => t !== btn.dataset.ovrm); renderOvSlotChips();
   }));
 }
-document.getElementById("add-override").addEventListener("click", async () => {
-  const date = document.getElementById("ov-date").value;
-  if (!date) return toast("اختاري تاريخ");
-  const closed = document.getElementById("ov-mode").value === "closed";
-  if (!closed && !ovSlots.length) return toast("أضيفي أوقات أو اختاري إغلاق اليوم");
+async function clearOverride() {
   try {
-    await api("/admin/overrides", { method: "POST", body: JSON.stringify({ branch: currentBranch, date, closed, slots: ovSlots }) });
-    ovSlots = []; renderOvSlots();
-    document.getElementById("ov-date").value = "";
-    toast("تم إضافة الاستثناء");
+    await api(`/admin/overrides/${currentBranch}/${ovSelected}`, { method: "DELETE" });
+    toast("رجع اليوم للجدول الافتراضي");
     loadSchedule();
   } catch (e) { toast(e.message); }
-});
-function renderOverrides() {
-  const list = (scheduleState.overrides[currentBranch]) || {};
-  const dates = Object.keys(list).sort();
-  const el = document.getElementById("override-list");
-  if (!dates.length) { el.innerHTML = '<p class="hint">لا توجد استثناءات مضافة لهذا الفرع</p>'; return; }
-  el.innerHTML = dates.map(d => {
-    const o = list[d];
-    const desc = o.closed ? "مغلق بالكامل" : "أوقات: " + o.slots.map(t12).join("، ");
-    return `<div class="override-item"><div class="ov-info"><b>${esc(d)}</b> — ${esc(desc)}</div><button class="btn btn-ghost btn-sm" data-del-ov="${d}">حذف</button></div>`;
-  }).join("");
-  el.querySelectorAll("[data-del-ov]").forEach(btn => btn.addEventListener("click", async () => {
-    await api(`/admin/overrides/${currentBranch}/${btn.dataset.delOv}`, { method: "DELETE" });
-    toast("تم حذف الاستثناء");
-    loadSchedule();
-  }));
 }
 
 // ---------- services ----------

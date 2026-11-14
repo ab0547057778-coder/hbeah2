@@ -8,10 +8,20 @@ const today = new Date(); today.setHours(0,0,0,0);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const val=id=>document.getElementById(id).value;
 
+// Promotional ticker — entirely admin-controlled (text + dates); shown only
+// while an offer is currently active.
+api("/offers/active").then(offer=>{
+  if(!offer) return;
+  const bar=document.createElement("div");
+  bar.className="offer-ticker";
+  bar.innerHTML=`<span>${esc(offer.text)}</span>`;
+  document.body.insertBefore(bar, document.body.firstChild);
+}).catch(()=>{});
+
 async function api(path, opts){
   const res = await fetch("/api"+path, Object.assign({headers:{"Content-Type":"application/json"}}, opts));
   let data = null; try{ data = await res.json(); }catch(e){}
-  if(!res.ok) throw new Error((data&&data.error)||"حصل خطأ، حاولي مرة أخرى");
+  if(!res.ok) throw new Error((data&&data.error)||"حدث خطأ، يرجى المحاولة مرة أخرى");
   return data;
 }
 
@@ -38,7 +48,7 @@ function isPayLive(method){ return !!PAYMENT_CONFIG[method]; }
     banner.innerHTML = `<div class="wrap pay-return-${ok?"ok":"bad"}">
       <b>${ok?"تم الدفع بنجاح ✓":"لم نتمكن من تأكيد الدفع"}</b>
       <p>${esc(b.serviceName)} — ${esc(b.branchName)} — رقم الحجز <span dir="ltr">${esc(b.ref)}</span></p>
-      ${ok?"":'<p>إذا تم الخصم من حسابك، راسلينا على الواتساب برقم الحجز وبنتأكد يدوياً.</p>'}
+      ${ok?"":'<p>في حال تم خصم المبلغ من حسابك، يُرجى التواصل معنا عبر الواتساب برقم الحجز وسيتم التأكد يدوياً.</p>'}
       <button class="btn btn-ghost btn-sm" id="pay-return-close">إغلاق</button>
     </div>`;
     document.getElementById("pay-return-close").onclick=()=>banner.remove();
@@ -60,10 +70,10 @@ function renderMenu(){
 const browPh=`<svg viewBox="0 0 120 40"><path d="M6 32 C30 10, 70 4, 112 14" stroke-width="2"/><path d="M20 26 C34 14, 60 9, 96 12" stroke-width="1" opacity=".5"/></svg>`;
 (function(){ const gal=document.getElementById("gal"); if(gal) gal.innerHTML=["قبل","بعد","قبل","بعد"].map(l=>`<div class="ph"><div>${browPh}${l}<br><small>صورة العميلة</small></div></div>`).join(""); })();
 
-async function monthAvail(branch, year, month){
-  const k = branch+":"+year+"-"+month;
+async function monthAvail(branch, year, month, serviceId){
+  const k = branch+":"+year+"-"+month+":"+(serviceId||"");
   if(!availCache.has(k)){
-    try{ availCache.set(k, await api(`/availability?branch=${branch}&year=${year}&month=${month}`)); }
+    try{ availCache.set(k, await api(`/availability?branch=${branch}&year=${year}&month=${month}${serviceId?`&serviceId=${serviceId}`:""}`)); }
     catch(e){ availCache.set(k, {}); }
   }
   return availCache.get(k);
@@ -131,8 +141,8 @@ async function ensureCatalogLoaded(){
   }
 }
 function stepService(){
-  if(!SERVICES.length){ body.innerHTML='<p class="hint">نحمّل الخدمات...</p>'; footer(false,"التالي",()=>{}); ensureCatalogLoaded().then(()=>{ if(S.step===0) render(); }); return; }
-  body.innerHTML=`<h3>وش الخدمة اللي تبينها؟</h3>`+SERVICES.map(s=>`<button class="opt" data-v="${s.id}" aria-pressed="${S.service===s.id}"><span class="dot"></span><span class="t"><b>${esc(s.name)}</b><small>${esc(s.en)}</small></span><span class="r">${fmtN(s.price)} ريال</span></button>`).join("");
+  if(!SERVICES.length){ body.innerHTML='<p class="hint">جارٍ تحميل الخدمات...</p>'; footer(false,"التالي",()=>{}); ensureCatalogLoaded().then(()=>{ if(S.step===0) render(); }); return; }
+  body.innerHTML=`<h3>اختاري الخدمة المطلوبة</h3>`+SERVICES.map(s=>`<button class="opt" data-v="${s.id}" aria-pressed="${S.service===s.id}"><span class="dot"></span><span class="t"><b>${esc(s.name)}</b><small>${esc(s.en)}</small></span><span class="r">${fmtN(s.price)} ريال</span></button>`).join("");
   body.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{S.service=b.dataset.v; S.step=S.branch?2:1; render();});
   footer(!!S.service,"التالي",()=>go(1));
 }
@@ -142,10 +152,10 @@ function stepBranch(){
   footer(!!S.branch,"التالي",()=>go(2));
 }
 async function stepDate(){
-  body.innerHTML=`<h3>اختاري اليوم في فرع ${esc(br().name)}</h3><p class="hint">نحمّل الأوقات المتاحة...</p>`;
+  body.innerHTML=`<h3>اختاري اليوم في فرع ${esc(br().name)}</h3><p class="hint">جارٍ تحميل الأوقات المتاحة...</p>`;
   footer(false,"التالي",()=>{});
   const m=S.month, y=m.getFullYear(), mo=m.getMonth();
-  const map = await monthAvail(S.branch, y, mo+1);
+  const map = await monthAvail(S.branch, y, mo+1, S.service);
   if(S.step!==2) return; // user navigated away while loading
   const first=new Date(y,mo,1), days=new Date(y,mo+1,0).getDate();
   const lead=(first.getDay()+1)%7;
@@ -170,17 +180,17 @@ async function stepDate(){
   body.querySelectorAll(".time:not([disabled])").forEach(b=>b.onclick=()=>{S.time=b.dataset.t; render(); body.scrollTop=body.scrollHeight;});
   footer(!!(S.date&&S.time),"التالي",()=>go(3));
 }
-const HEALTH=["عندي سكري","عندي ضغط دم مرتفع أو منخفض","أستخدم أدوية سيولة الدم","عندي التهاب أو مشكلة جلدية في المنطقة","عندي حساسية من الصبغات","عندي تاتو أو مايكروبليدينق سابق للحواجب"];
+const HEALTH=["لديّ داء السكري","لديّ ارتفاع أو انخفاض في ضغط الدم","أستخدم أدوية سيولة الدم","لديّ التهاب أو مشكلة جلدية في المنطقة","لديّ حساسية من الأصبغة","لديّ وشم أو مايكروبليدينق سابق للحواجب"];
 const toLatin=s=>s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d]/g,"");
 function stepDetails(){
   const phoneLocked=!!CURRENT_CUSTOMER;
   body.innerHTML=`<h3>بياناتك</h3>
   <div class="field" id="f-name"><label for="nm-in">الاسم</label><input id="nm-in" autocomplete="name" value="${esc(S.name)}"><div class="err">اكتبي اسمك</div></div>
   <div class="field" id="f-phone"><label for="ph-in">رقم الجوال</label><input id="ph-in" inputmode="numeric" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" value="${esc(S.phone)}" ${phoneLocked?"readonly":""}><div class="err">اكتبي رقم جوال سعودي يبدأ بـ 05 ومكوّن من 10 أرقام</div>${phoneLocked?'<p class="hint" style="margin:6px 0 0">رقم جوال حسابك المسجّل به</p>':""}</div>
-  <fieldset><legend>قبل الجلسة، هل ينطبق عليك شي من هذي؟</legend><div class="checks">${HEALTH.map((h,i)=>`<label class="check"><input type="checkbox" data-h="${i}" ${S.health.includes(i)?"checked":""}>${h}</label>`).join("")}</div>
-  <div class="box-note" id="hnote">بعض هذي الحالات ممكن ما يناسبها الإجراء حالياً. ننصحك تكلمينا على الواتساب قبل تأكيد موعدك. <a href="https://wa.me/${WA}" target="_blank" rel="noopener">تواصلي معنا</a></div></fieldset>
+  <fieldset><legend>هل ينطبق عليكِ أيٌّ مما يلي قبل الجلسة؟</legend><div class="checks">${HEALTH.map((h,i)=>`<label class="check"><input type="checkbox" data-h="${i}" ${S.health.includes(i)?"checked":""}>${h}</label>`).join("")}</div>
+  <div class="box-note" id="hnote">بعض هذه الحالات قد لا يناسبها هذا الإجراء حالياً. يُنصح بالتواصل معنا عبر الواتساب قبل تأكيد موعدك. <a href="https://wa.me/${WA}" target="_blank" rel="noopener">تواصلي معنا</a></div></fieldset>
   <div class="field"><label for="nt-in">ملاحظات (اختياري)</label><textarea id="nt-in" rows="2">${esc(S.notes)}</textarea></div>
-  <p class="hint" style="margin:0 0 10px">سياسة الإلغاء: الإلغاء قبل الموعد بـ ٤٨ ساعة أو أكثر يرجع لك المبلغ كامل، وبعدها نقدر نأجل موعدك مرة وحدة بدون استرجاع.</p>
+  <p class="hint" style="margin:0 0 10px">سياسة الإلغاء: يُعاد إليك المبلغ كاملاً عند الإلغاء قبل الموعد بـ48 ساعة أو أكثر، وبعد ذلك يمكن تأجيل الموعد مرة واحدة دون استرداد.</p>
   <label class="check"><input type="checkbox" id="agree" ${S.agree?"checked":""}>قرأت سياسة الإلغاء والتأجيل وأوافق عليها</label>`;
   const upd=()=>{S.name=val("nm-in").trim(); S.phone=val("ph-in"); S.notes=val("nt-in"); S.agree=document.getElementById("agree").checked;
     S.health=[...body.querySelectorAll("[data-h]:checked")].map(x=>+x.dataset.h); document.getElementById("hnote").classList.toggle("show",S.health.length>0);
@@ -201,7 +211,7 @@ function totalLine(s){
 }
 function payHint(){
   return isPayLive(S.pay)
-    ? '<p class="hint">بعد الضغط على "ادفعي الآن" بتنتقلين لصفحة دفع آمنة لإتمام العملية.</p>'
+    ? '<p class="hint">بعد الضغط على "ادفعي الآن" سيتم تحويلك إلى صفحة دفع آمنة لإتمام العملية.</p>'
     : '';
 }
 function stepPay(){
@@ -217,7 +227,7 @@ function stepPay(){
     S.pay=b.dataset.v; body.querySelectorAll(".opt").forEach(x=>x.setAttribute("aria-pressed",x===b));
     document.getElementById("pay-hint").innerHTML=payHint();
     footer(true,isPayLive(S.pay)?"ادفعي الآن":"تأكيد الحجز",submitBooking);
-    if(S.discount){ S.discount=null; document.getElementById("disc-msg").textContent="غيّرتي طريقة الدفع، طبّقي الكود مرة أخرى"; refreshPayRecap(); }
+    if(S.discount){ S.discount=null; document.getElementById("disc-msg").textContent="تم تغيير طريقة الدفع، يُرجى إعادة تطبيق الكود"; refreshPayRecap(); }
   });
   document.getElementById("disc-apply").onclick=applyDiscount;
   footer(!!S.pay,S.pay&&isPayLive(S.pay)?"ادفعي الآن":"تأكيد الحجز",submitBooking);
@@ -323,7 +333,7 @@ function aRender(){
   return aRenderLogin();
 }
 function gateNote(){
-  return PENDING_BOOKING ? '<p class="a-gate-note">سجّلي دخولك أو أنشئي حساب لتكملي حجزك — نحفظ لك حجوزاتك كلها بمكان وحد.</p>' : "";
+  return PENDING_BOOKING ? '<p class="a-gate-note">سجّلي دخولك أو أنشئي حساباً لإكمال حجزك — نحتفظ بجميع حجوزاتك في مكان واحد.</p>' : "";
 }
 function aRenderLogin(){
   document.getElementById("a-title").textContent="تسجيل الدخول";
@@ -332,7 +342,7 @@ function aRenderLogin(){
   <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="current-password"><div class="err">اكتبي كلمة المرور</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="a-switch">ما عندك حساب؟ <a href="#" id="a-to-signup">سجّلي واحد جديد</a></p></div>`;
+  <p class="a-switch">ليس لديك حساب؟ <a href="#" id="a-to-signup">أنشئي حساباً جديداً</a></p></div>`;
   document.getElementById("a-to-signup").onclick=(e)=>{e.preventDefault(); AV="signup"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">دخول</button>`;
   document.getElementById("a-submit").onclick=async()=>{
@@ -353,14 +363,14 @@ function aRenderLogin(){
 function aRenderSignup(){
   document.getElementById("a-title").textContent="حساب جديد";
   const maxDob=new Date(); maxDob.setFullYear(maxDob.getFullYear()-10);
-  abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>انشئي حسابك</h3><p>خطوة وحدة قبل ما نبدأ حجزك</p></div>
+  abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>أنشئي حسابك</h3><p>خطوة واحدة قبل أن نبدأ حجزك</p></div>
   ${gateNote()}
   <div class="field" id="a-f-name"><label for="a-nm">الاسم</label><input id="a-nm" autocomplete="name"><div class="err">اكتبي اسمك</div></div>
   <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
   <div class="field" id="a-f-dob"><label for="a-dob">تاريخ الميلاد</label><input id="a-dob" type="date" max="${maxDob.toISOString().slice(0,10)}"><div class="err">تاريخ ميلاد غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="new-password"><div class="err">٦ خانات على الأقل</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="a-switch">عندك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p></div>`;
+  <p class="a-switch">لديك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p></div>`;
   document.getElementById("a-to-login").onclick=(e)=>{e.preventDefault(); AV="login"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">إنشاء حساب</button>`;
   document.getElementById("a-submit").onclick=async()=>{
@@ -383,7 +393,7 @@ function aRenderSignup(){
 }
 async function aRenderAccount(){
   document.getElementById("a-title").textContent="حسابي";
-  abody.innerHTML=`<div class="aview"><p class="hint" style="margin-top:0">${esc(CURRENT_CUSTOMER.name)} · <span dir="ltr">${esc(CURRENT_CUSTOMER.phone)}</span></p><h3>حجوزاتي</h3><div id="a-bookings"><p class="hint">نحمّل حجوزاتك...</p></div></div>`;
+  abody.innerHTML=`<div class="aview"><p class="hint" style="margin-top:0">${esc(CURRENT_CUSTOMER.name)} · <span dir="ltr">${esc(CURRENT_CUSTOMER.phone)}</span></p><h3>حجوزاتي</h3><div id="a-bookings"><p class="hint">جارٍ تحميل حجوزاتك...</p></div></div>`;
   afoot.innerHTML=`<button class="btn btn-ghost" style="flex:1" id="a-logout">تسجيل الخروج</button>`;
   document.getElementById("a-logout").onclick=async()=>{
     await api("/customers/logout",{method:"POST"});
@@ -392,13 +402,20 @@ async function aRenderAccount(){
   let list=[];
   try{ list=await api("/customers/bookings"); }catch(e){}
   const el=document.getElementById("a-bookings");
-  if(!list.length){ el.innerHTML='<p class="hint">ما سويتي أي حجز بعد.</p>'; return; }
+  if(!list.length){ el.innerHTML='<p class="hint">لا يوجد لديك أي حجز حتى الآن.</p>'; return; }
   el.innerHTML=list.map(b=>{
     const price = b.discount ? b.discount.percent+'% خصم، '+fmtN(b.price)+' ريال' : fmtN(b.price)+' ريال';
     let actions="";
     if(b.canCancel) actions+=`<button class="btn btn-ghost btn-sm" data-cancel="${b.id}">إلغاء الحجز</button>`;
-    else if(b.canRequestReschedule) actions+= b.rescheduleRequested ? '<span class="hint">تم إرسال طلب التأجيل، بننسق وياك على الواتساب</span>' : `<button class="btn btn-ghost btn-sm" data-resched="${b.id}">طلب تأجيل</button>`;
-    return `<div class="recap" style="margin-bottom:12px"><div><span>الخدمة</span>${esc(b.serviceName)}</div><div><span>الفرع</span>${esc(b.branchName)}</div><div><span>الموعد</span>${dLong.format(new Date(b.date.split('-')[0],b.date.split('-')[1]-1,b.date.split('-')[2]))}، ${t12(b.time)}</div><div><span>الحالة</span><span class="latin" dir="ltr">${({pending:"قيد الانتظار",confirmed:"مؤكد",cancelled:"ملغي",done:"مكتمل"})[b.status]}</span></div><div><span>المبلغ</span>${price}</div></div>${actions?`<div style="margin:-6px 0 16px">${actions}</div>`:""}`;
+    else if(b.canRequestReschedule) actions+= b.rescheduleRequested ? '<span class="hint">تم إرسال طلب التأجيل، وسيتم التنسيق معك عبر الواتساب</span>' : `<button class="btn btn-ghost btn-sm" data-resched="${b.id}">طلب تأجيل</button>`;
+    let retouchBlock="";
+    if(b.retouch){
+      if(b.retouch.alreadyBooked) retouchBlock='<p class="hint">تم حجز جلسة الرتوش المجانية الخاصة بهذا الموعد.</p>';
+      else if(b.retouch.eligible) retouchBlock=`<button class="btn btn-rose btn-sm" data-retouch="${b.id}" style="margin-top:6px">احجزي جلسة الرتوش المجانية${b.retouch.ideal?" (الفترة المثلى الآن)":""}</button>`;
+      else if(b.retouch.daysSince<25) retouchBlock=`<p class="hint">تُتاح جلسة الرتوش المجانية ابتداءً من اليوم الخامس والعشرين بعد هذا الموعد.</p>`;
+      else retouchBlock='<p class="hint">انتهت فترة أحقية جلسة الرتوش المجانية لهذا الموعد.</p>';
+    }
+    return `<div class="recap" style="margin-bottom:12px"><div><span>الخدمة</span>${esc(b.serviceName)}</div><div><span>الفرع</span>${esc(b.branchName)}</div><div><span>الموعد</span>${dLong.format(new Date(b.date.split('-')[0],b.date.split('-')[1]-1,b.date.split('-')[2]))}، ${t12(b.time)}</div><div><span>الحالة</span><span class="latin" dir="ltr">${({pending:"قيد الانتظار",confirmed:"مؤكد",cancelled:"ملغي",done:"مكتمل"})[b.status]}</span></div><div><span>المبلغ</span>${price}</div></div>${actions?`<div style="margin:-6px 0 16px">${actions}</div>`:""}${retouchBlock?`<div style="margin:-6px 0 16px">${retouchBlock}</div>`:""}`;
   }).join("");
   el.querySelectorAll("[data-cancel]").forEach(btn=>btn.addEventListener("click",async()=>{
     if(!confirm("تأكيد إلغاء هذا الحجز؟")) return;
@@ -407,4 +424,66 @@ async function aRenderAccount(){
   el.querySelectorAll("[data-resched]").forEach(btn=>btn.addEventListener("click",async()=>{
     try{ await api(`/customers/bookings/${btn.dataset.resched}/request-reschedule`,{method:"POST"}); aRenderAccount(); }catch(e){ alert(e.message); }
   }));
+  el.querySelectorAll("[data-retouch]").forEach(btn=>btn.addEventListener("click",()=>{
+    openRetouch(list.find(x=>x.id===btn.dataset.retouch));
+  }));
+}
+
+/* retouch booking (free follow-up session) */
+let RT_ORIG=null, RT_DATE=null, RT_TIME=null, RT_MONTH=null;
+function openRetouch(orig){
+  RT_ORIG=orig; RT_DATE=null; RT_TIME=null; RT_MONTH=new Date(today.getFullYear(),today.getMonth(),1);
+  aClose();
+  lastFocus=document.activeElement; sheet.classList.add("open"); sheet.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden";
+  renderRetouchStep();
+  sheet.querySelector(".x").focus();
+}
+function retouchFooter(canNext,label,onNext){
+  foot.innerHTML=`<div class="sum"><b>جلسة الرتوش المجانية</b>${esc(RT_ORIG.branchName)}${RT_DATE?"، "+dLong.format(RT_DATE):""}${RT_TIME?"، "+t12(RT_TIME):""}</div><button class="btn btn-rose" id="next" ${canNext?"":"disabled"}>${label}</button>`;
+  document.getElementById("next").onclick=onNext;
+}
+async function renderRetouchStep(){
+  document.getElementById("prog").innerHTML="";
+  document.getElementById("prog-label").textContent="حجز جلسة الرتوش المجانية";
+  body.innerHTML=`<h3>اختاري موعد جلسة الرتوش في فرع ${esc(RT_ORIG.branchName)}</h3><p class="hint">يتم تحميل الأوقات المتاحة...</p>`;
+  retouchFooter(false,"تأكيد الحجز",()=>{});
+  const m=RT_MONTH, y=m.getFullYear(), mo=m.getMonth();
+  const map=await monthAvail(RT_ORIG.branch,y,mo+1,"retouch");
+  if(!sheet.classList.contains("open")) return;
+  const first=new Date(y,mo,1), days=new Date(y,mo+1,0).getDate();
+  const lead=(first.getDay()+1)%7;
+  const dows=["س","ح","ن","ث","ر","خ","ج"];
+  let cells=dows.map(d=>`<div class="dow">${d}</div>`).join("")+"<div></div>".repeat(lead);
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,mo,d), k=key(dt), sl=map[k];
+    const openDay=sl&&sl.some(x=>x.available), full=sl&&!openDay, sel=RT_DATE&&key(RT_DATE)===k;
+    cells+=`<button class="day ${openDay?"open":""} ${full?"full":""} ${sel?"sel":""}" ${openDay?`data-d="${k}"`:"disabled"} aria-label="${dLong.format(dt)}${openDay?"":full?"، مكتمل":"، مغلق"}">${d}</button>`;
+  }
+  const horizon=new Date(today); horizon.setDate(horizon.getDate()+60);
+  const canPrev=new Date(y,mo,1)>new Date(today.getFullYear(),today.getMonth(),1), canNext=new Date(y,mo+1,1)<=horizon;
+  let times="";
+  if(RT_DATE){const sl=map[key(RT_DATE)]||[]; times=`<h3 style="margin-top:22px">الأوقات المتاحة يوم ${dLong.format(RT_DATE)}</h3><div class="times">${sl.map(x=>`<button class="time" data-t="${x.time}" ${x.available?"":"disabled"} aria-pressed="${RT_TIME===x.time}">${t12(x.time)}</button>`).join("")}</div>`;}
+  body.innerHTML=`<h3>اختاري موعد جلسة الرتوش في فرع ${esc(RT_ORIG.branchName)}</h3>
+    <div class="cal-head"><b>${mName.format(m)}</b><div class="cal-nav"><button id="pm" aria-label="الشهر السابق" ${canPrev?"":"disabled"}>›</button><button id="nm" aria-label="الشهر التالي" ${canNext?"":"disabled"}>‹</button></div></div>
+    <div class="cal">${cells}</div>
+    <div class="legend"><span>الأيام الواضحة متاحة</span><span>الباهتة مغلقة أو مكتملة</span></div>${times}`;
+  document.getElementById("pm").onclick=()=>{RT_MONTH=new Date(y,mo-1,1);renderRetouchStep();};
+  document.getElementById("nm").onclick=()=>{RT_MONTH=new Date(y,mo+1,1);renderRetouchStep();};
+  body.querySelectorAll(".day[data-d]").forEach(b=>b.onclick=()=>{const [a,c,e]=b.dataset.d.split("-").map(Number); RT_DATE=new Date(a,c-1,e); RT_TIME=null; renderRetouchStep(); const t=body.querySelector(".times"); t&&t.scrollIntoView({behavior:"smooth",block:"center"});});
+  body.querySelectorAll(".time:not([disabled])").forEach(b=>b.onclick=()=>{RT_TIME=b.dataset.t; renderRetouchStep(); body.scrollTop=body.scrollHeight;});
+  retouchFooter(!!(RT_DATE&&RT_TIME),"تأكيد الحجز",submitRetouch);
+}
+async function submitRetouch(){
+  const nextBtn=document.getElementById("next");
+  nextBtn.disabled=true; nextBtn.innerHTML='<span class="spin"></span>';
+  try{
+    await api("/customers/bookings/retouch",{method:"POST",body:JSON.stringify({bookingId:RT_ORIG.id,date:key(RT_DATE),time:RT_TIME})});
+    body.innerHTML=`<div class="done"><div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h3>تم تأكيد حجز جلسة الرتوش</h3>
+    <div class="recap"><div><span>الفرع</span>${esc(RT_ORIG.branchName)}</div><div><span>الموعد</span>${dLong.format(RT_DATE)}، ${t12(RT_TIME)}</div></div></div>`;
+    foot.innerHTML=`<button class="btn btn-rose" style="flex:1" data-close>تم</button>`;
+  }catch(e){
+    nextBtn.disabled=false; nextBtn.textContent="تأكيد الحجز";
+    body.insertAdjacentHTML("afterbegin",`<div class="box-note show">${esc(e.message)}</div>`);
+  }
 }

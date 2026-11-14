@@ -33,6 +33,10 @@ button{font:inherit;color:inherit}
 .latin{font-family:var(--f-latin);direction:ltr;unicode-bidi:isolate}
 
 /* header */
+.offer-ticker{position:relative;z-index:50;background:var(--rose-deep);color:var(--cream);overflow:hidden;white-space:nowrap;padding:9px 0}
+.offer-ticker span{display:inline-block;padding-inline-end:60px;font-family:var(--f-display);font-size:13.5px;animation:offerScroll 22s linear infinite}
+.offer-ticker:hover span{animation-play-state:paused}
+@keyframes offerScroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--cream) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:10px;height:62px}
 .brand{display:flex;align-items:center;gap:8px;text-decoration:none}

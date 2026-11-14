@@ -133,6 +133,32 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
 .ov-legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .ov-editor{background:var(--paper);border-radius:14px;padding:16px}
 .ov-editor h4{font-family:var(--f-display);font-weight:500;font-size:16px;margin:0 0 10px}
+
+/* weekly ranges */
+.wr-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.wr-row:last-child{border-bottom:0}
+.wr-row .wr-day{display:flex;align-items:center;gap:8px;min-width:90px;font-size:14px}
+.wr-row .wr-day input{width:auto}
+.wr-row .wr-times{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
+.wr-row .wr-times input{width:auto;flex:1;min-width:90px}
+.wr-row.off .wr-times{opacity:.4;pointer-events:none}
+
+/* retouch */
+.retouch-info{background:var(--paper);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);margin-top:4px}
+.retouch-info b{color:var(--ink)}
+.source-badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;background:var(--paper);color:var(--muted);margin-inline-start:6px}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-panel{background:var(--cream);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:20px}
+.modal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.modal-head h3{flex:1;font-size:18px}
+.modal-x{width:32px;height:32px;border-radius:50%;border:0;background:var(--paper);cursor:pointer;font-size:18px;color:var(--muted)}
+@media (min-width:560px){
+  .modal-overlay{align-items:center}
+  .modal-panel{border-radius:20px}
+}
 </style>
 </head>
 <body>
@@ -158,6 +184,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
       <button class="tab" data-view="schedule">الأوقات المتاحة</button>
       <button class="tab" data-view="services">الخدمات</button>
       <button class="tab" data-view="discounts">أكواد الخصم</button>
+      <button class="tab" data-view="offers">العروض</button>
       <button class="tab" data-view="account">الحساب</button>
     </div>
     <div class="spacer"></div>
@@ -177,7 +204,10 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
           </select>
           <select id="f-branch"><option value="all">كل الفروع</option></select>
           <input type="search" id="f-q" placeholder="بحث بالاسم، الجوال، أو رقم الحجز">
-          <button class="btn btn-ghost btn-sm" id="refresh-bookings">تحديث</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="refresh-bookings" style="flex:1">تحديث</button>
+            <button class="btn btn-sm" id="new-booking-btn" style="flex:1">+ حجز جديد (واتساب)</button>
+          </div>
         </div>
         <div style="overflow-x:auto">
           <table id="bookings-table">
@@ -195,22 +225,17 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
       <div class="card">
         <div class="branch-tabs" id="schedule-branch-tabs"></div>
         <h3 class="section-title">الجدول الأسبوعي المتكرر</h3>
-        <p class="hint">اختاري الأيام اللي يفتح فيها هذا الفرع، والأوقات المتاحة في كل يوم من هذي الأيام.</p>
-        <div class="weekdays" id="weekdays"></div>
-        <div class="chips" id="slot-chips"></div>
-        <div class="add-slot">
-          <input type="time" id="new-slot-time">
-          <button class="btn btn-ghost btn-sm" id="add-slot-btn">+ إضافة وقت</button>
-          <label style="display:flex;align-items:center;gap:8px;margin-inline-start:auto;font-size:14px">عدد الحجوزات لكل وقت
-            <input type="number" id="capacity" min="1" style="width:70px">
-          </label>
-        </div>
+        <p class="hint">لكل يوم، حدّدي ساعة البداية والنهاية إذا كان هذا الفرع يفتح فيه. المواعيد المتاحة تُحسب تلقائياً حسب مدة كل خدمة.</p>
+        <div id="week-ranges"></div>
+        <label style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:14px">عدد المواعيد المتزامنة (عدد الكراسي/الفنيات)
+          <input type="number" id="capacity" min="1" style="width:70px">
+        </label>
         <button class="btn" id="save-schedule">حفظ الجدول</button>
         <span id="schedule-saved" class="hint" style="display:none;color:var(--ok)">✓ تم الحفظ</span>
 
         <hr class="sep">
         <h3 class="section-title">أوقات حسب التاريخ</h3>
-        <p class="hint">اختاري أي يوم من التقويم مباشرة عشان تخصّصين له أوقات معيّنة أو تغلقينه بالكامل — مو بس حسب اسم اليوم.</p>
+        <p class="hint">اختاري أي يوم من التقويم مباشرة لتخصيص دوام ذلك اليوم أو إغلاقه بالكامل، بدلاً من الجدول الأسبوعي العام.</p>
         <div class="ov-cal-head"><b id="ov-cal-label"></b><div class="ov-cal-nav"><button id="ov-pm" aria-label="الشهر السابق">›</button><button id="ov-nm" aria-label="الشهر التالي">‹</button></div></div>
         <div class="ov-cal" id="ov-cal"></div>
         <div class="ov-legend">
@@ -269,6 +294,25 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
       </div>
     </section>
 
+    <section class="view" id="view-offers">
+      <div class="card">
+        <h3 class="section-title">إضافة عرض جديد</h3>
+        <p class="hint">نص العرض يظهر كشريط متحرك في أعلى موقع العميلات طوال مدة سريانه.</p>
+        <div class="field" style="margin-top:12px"><label for="o-text">نص العرض</label><textarea id="o-text" rows="2" placeholder="مثال: خصم خاص على جلسات المايكروبليدينق هذا الأسبوع فقط"></textarea></div>
+        <div class="row" style="margin-top:12px">
+          <div><label for="o-start">تاريخ البداية (اختياري)</label><input type="date" id="o-start"></div>
+          <div><label for="o-end">تاريخ النهاية (اختياري)</label><input type="date" id="o-end"></div>
+        </div>
+        <button class="btn" id="o-create" style="margin-top:14px">نشر العرض</button>
+        <div class="login-err" id="o-err"></div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">العروض الحالية</h3>
+        <div id="offers-list"></div>
+        <div class="empty" id="offers-empty" style="display:none">لا توجد عروض بعد</div>
+      </div>
+    </section>
+
     <section class="view" id="view-account">
       <div class="card" style="max-width:420px">
         <h3 class="section-title">تغيير كلمة المرور</h3>
@@ -282,6 +326,13 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-panel">
+    <div class="modal-head"><h3 id="modal-title"></h3><button class="modal-x" id="modal-close" aria-label="إغلاق">×</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
 
 <script src="admin.js"></script>
 </body>

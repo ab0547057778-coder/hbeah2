@@ -79,6 +79,13 @@ td.notes-cell{color:var(--muted);font-size:13px;text-align:end}
 .badge.cancelled{background:var(--bad-bg);color:var(--bad)}
 .badge.done{background:var(--paper);color:var(--muted)}
 .row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;width:100%}
+.bk-summary-cell{display:flex!important;cursor:pointer;border-bottom:0!important}
+.bk-summary-cell .bk-name{font-family:var(--f-display);font-weight:600;font-size:15.5px}
+.bk-chevron{color:var(--muted);transition:transform .2s;flex:none}
+tr.expanded .bk-summary-cell{border-bottom:1px solid var(--line)!important}
+tr.expanded .bk-chevron{transform:rotate(180deg)}
+.bk-detail{display:none}
+tr.expanded .bk-detail{display:flex}
 .empty{color:var(--muted);text-align:center;padding:40px 0}
 .health-flags{display:inline-flex;gap:4px}
 .flag{width:8px;height:8px;border-radius:50%;background:var(--warn)}

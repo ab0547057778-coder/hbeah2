@@ -106,23 +106,42 @@ function renderBookings() {
     if (b.status !== "done") actions.push(`<button class="btn btn-ghost btn-sm" data-act="done" data-id="${b.id}">مكتمل</button>`);
     if (b.status !== "cancelled") actions.push(`<button class="btn btn-ghost btn-sm" data-act="cancelled" data-id="${b.id}">إلغاء</button>`);
     actions.push(`<a class="btn btn-ghost btn-sm" href="https://wa.me/966${b.phone.slice(1)}?text=${waMsg}" target="_blank" rel="noopener">واتساب</a>`);
-    return `<tr>
-      <td data-label=""><span class="latin" dir="ltr" style="font-weight:600;font-size:15px">${esc(b.ref)}</span></td>
-      <td data-label="الخدمة">${esc(b.serviceName)}</td>
-      <td data-label="الفرع">${esc(b.branchName)}</td>
-      <td data-label="الموعد">${esc(dShort.format(new Date(b.date)))}، ${t12(b.time)}</td>
-      <td data-label="العميلة">${esc(b.name)}</td>
-      <td data-label="الجوال" dir="ltr">${esc(b.phone)}</td>
-      <td data-label="الدفع">${esc({ tabby: "تابي", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
-      <td data-label="الحالة" style="text-align:start"><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
-      <td class="notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}</td>
-      <td data-label=""><div class="row-actions">${actions.join("")}</div></td>
+    actions.push(`<button class="btn btn-ghost btn-sm" data-del="${b.id}" style="color:var(--bad)">حذف نهائي</button>`);
+    return `<tr data-id="${b.id}">
+      <td class="bk-summary-cell" data-toggle>
+        <span class="bk-name">${esc(b.name)}</span>
+        <svg class="bk-chevron" viewBox="0 0 24 24" width="18" height="18"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </td>
+      <td class="bk-detail" data-label=""><span class="latin" dir="ltr" style="font-weight:600;font-size:15px">${esc(b.ref)}</span></td>
+      <td class="bk-detail" data-label="الخدمة">${esc(b.serviceName)}</td>
+      <td class="bk-detail" data-label="الفرع">${esc(b.branchName)}</td>
+      <td class="bk-detail" data-label="الموعد">${esc(dShort.format(new Date(b.date)))}، ${t12(b.time)}</td>
+      <td class="bk-detail" data-label="الجوال" dir="ltr">${esc(b.phone)}</td>
+      <td class="bk-detail" data-label="الدفع">${esc({ tabby: "تابي", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
+      <td class="bk-detail" data-label="الحالة" style="text-align:start"><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
+      <td class="bk-detail notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}</td>
+      <td class="bk-detail" data-label=""><div class="row-actions">${actions.join("")}</div></td>
     </tr>`;
   }).join("");
+  body.querySelectorAll("tr[data-id]").forEach(tr => {
+    tr.querySelector("[data-toggle]").addEventListener("click", () => {
+      const wasOpen = tr.classList.contains("expanded");
+      body.querySelectorAll("tr.expanded").forEach(x => x.classList.remove("expanded"));
+      if (!wasOpen) tr.classList.add("expanded");
+    });
+  });
   body.querySelectorAll("[data-act]").forEach(btn => btn.addEventListener("click", async () => {
     try {
       await api(`/admin/bookings/${btn.dataset.id}`, { method: "PATCH", body: JSON.stringify({ status: btn.dataset.act }) });
       toast("تم تحديث حالة الحجز");
+      loadBookings();
+    } catch (e) { toast(e.message); }
+  }));
+  body.querySelectorAll("[data-del]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("هل أنتِ متأكدة من حذف هذا الحجز نهائياً؟ ما يمديك تتراجعين عن هذا القرار.")) return;
+    try {
+      await api(`/admin/bookings/${btn.dataset.del}`, { method: "DELETE" });
+      toast("تم حذف الحجز نهائياً");
       loadBookings();
     } catch (e) { toast(e.message); }
   }));

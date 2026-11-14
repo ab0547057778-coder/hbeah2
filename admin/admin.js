@@ -212,8 +212,12 @@ document.getElementById("new-booking-btn").addEventListener("click", () => {
       <div><label for="nb-date">التاريخ</label><input type="date" id="nb-date"></div>
       <div><label for="nb-time">الوقت</label><input type="time" id="nb-time"></div>
     </div>
-    <div class="field" style="margin-top:12px"><label for="nb-name">اسم العميلة</label><input id="nb-name"></div>
-    <div class="field"><label for="nb-phone">رقم الجوال</label><input id="nb-phone" dir="ltr" placeholder="05xxxxxxxx"></div>
+    <div class="row" style="margin-top:12px">
+      <div><label for="nb-name1">الاسم الأول</label><input id="nb-name1" placeholder="مثال: هبة"></div>
+      <div><label for="nb-name2">اسم الأب</label><input id="nb-name2" placeholder="مثال: عبدالمحسن"></div>
+      <div><label for="nb-name3">اسم العائلة</label><input id="nb-name3" placeholder="مثال: المسلم"></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label for="nb-phone">رقم الجوال</label><input id="nb-phone" dir="ltr" placeholder="05xxxxxxxx"></div>
     <div class="row" style="margin-top:12px">
       <div><label for="nb-pay">طريقة الدفع</label><select id="nb-pay"><option value="cash">كاش</option><option value="bank">تحويل بنكي</option></select></div>
       <div><label for="nb-status">الحالة</label><select id="nb-status"><option value="confirmed">مؤكد</option><option value="pending">قيد الانتظار</option><option value="done">مكتمل</option></select></div>
@@ -226,12 +230,16 @@ document.getElementById("new-booking-btn").addEventListener("click", () => {
   document.getElementById("nb-submit").onclick = async () => {
     const err = document.getElementById("nb-err");
     err.classList.remove("show");
+    const nm1 = document.getElementById("nb-name1").value.trim();
+    const nm2 = document.getElementById("nb-name2").value.trim();
+    const nm3 = document.getElementById("nb-name3").value.trim();
+    if (!nm1 || !nm2 || !nm3) { err.textContent = "الاسم الثلاثي مطلوب (الاسم الأول، اسم الأب، اسم العائلة)"; err.classList.add("show"); return; }
     const payload = {
       serviceId: document.getElementById("nb-service").value,
       branch: document.getElementById("nb-branch").value,
       date: document.getElementById("nb-date").value,
       time: document.getElementById("nb-time").value,
-      name: document.getElementById("nb-name").value,
+      name: `${nm1} ${nm2} ${nm3}`,
       phone: document.getElementById("nb-phone").value,
       pay: document.getElementById("nb-pay").value,
       status: document.getElementById("nb-status").value,

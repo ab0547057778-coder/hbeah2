@@ -185,7 +185,7 @@ const toLatin=s=>s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).repl
 function stepDetails(){
   const phoneLocked=!!CURRENT_CUSTOMER;
   body.innerHTML=`<h3>بياناتك</h3>
-  <div class="field" id="f-name"><label for="nm-in">الاسم</label><input id="nm-in" autocomplete="name" value="${esc(S.name)}"><div class="err">اكتبي اسمك</div></div>
+  <div class="field" id="f-name"><label for="nm-in">الاسم</label><input id="nm-in" autocomplete="name" value="${esc(S.name)}" ${phoneLocked?"readonly":""}><div class="err">الاسم الثلاثي مطلوب</div>${phoneLocked?'<p class="hint" style="margin:6px 0 0">الاسم المسجّل بحسابك</p>':""}</div>
   <div class="field" id="f-phone"><label for="ph-in">رقم الجوال</label><input id="ph-in" inputmode="numeric" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" value="${esc(S.phone)}" ${phoneLocked?"readonly":""}><div class="err">اكتبي رقم جوال سعودي يبدأ بـ 05 ومكوّن من 10 أرقام</div>${phoneLocked?'<p class="hint" style="margin:6px 0 0">رقم جوال حسابك المسجّل به</p>':""}</div>
   <fieldset><legend>هل ينطبق عليكِ أيٌّ مما يلي قبل الجلسة؟</legend><div class="checks">${HEALTH.map((h,i)=>`<label class="check"><input type="checkbox" data-h="${i}" ${S.health.includes(i)?"checked":""}>${h}</label>`).join("")}</div>
   <div class="box-note" id="hnote">بعض هذه الحالات قد لا يناسبها هذا الإجراء حالياً. يُنصح بالتواصل معنا عبر الواتساب قبل تأكيد موعدك. <a href="https://wa.me/${WA}" target="_blank" rel="noopener">تواصلي معنا</a></div></fieldset>
@@ -365,7 +365,9 @@ function aRenderSignup(){
   const maxDob=new Date(); maxDob.setFullYear(maxDob.getFullYear()-10);
   abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>أنشئي حسابك</h3><p>خطوة واحدة قبل أن نبدأ حجزك</p></div>
   ${gateNote()}
-  <div class="field" id="a-f-name"><label for="a-nm">الاسم</label><input id="a-nm" autocomplete="name"><div class="err">اكتبي اسمك</div></div>
+  <div class="field" id="a-f-name1"><label for="a-nm1">الاسم الأول</label><input id="a-nm1" autocomplete="given-name" placeholder="مثال: هبة"><div class="err">الاسم الأول مطلوب</div></div>
+  <div class="field" id="a-f-name2"><label for="a-nm2">اسم الأب</label><input id="a-nm2" autocomplete="additional-name" placeholder="مثال: عبدالمحسن"><div class="err">اسم الأب مطلوب</div></div>
+  <div class="field" id="a-f-name3"><label for="a-nm3">اسم العائلة</label><input id="a-nm3" autocomplete="family-name" placeholder="مثال: المسلم"><div class="err">اسم العائلة مطلوب</div></div>
   <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
   <div class="field" id="a-f-dob"><label for="a-dob">تاريخ الميلاد</label><input id="a-dob" type="date" max="${maxDob.toISOString().slice(0,10)}"><div class="err">تاريخ ميلاد غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="new-password"><div class="err">٦ خانات على الأقل</div></div>
@@ -374,13 +376,21 @@ function aRenderSignup(){
   document.getElementById("a-to-login").onclick=(e)=>{e.preventDefault(); AV="login"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">إنشاء حساب</button>`;
   document.getElementById("a-submit").onclick=async()=>{
-    const name=val("a-nm").trim(), phone=toLatin(val("a-ph")), password=val("a-pw"), dob=val("a-dob");
-    const okN=name.length>=2, okP=/^05\d{8}$/.test(phone), okPw=password.length>=6, okDob=!!dob;
-    document.getElementById("a-f-name").classList.toggle("bad",!okN);
+    const nm1=val("a-nm1").trim(), nm2=val("a-nm2").trim(), nm3=val("a-nm3").trim();
+    const name=`${nm1} ${nm2} ${nm3}`.trim();
+    const phone=toLatin(val("a-ph")), password=val("a-pw"), dob=val("a-dob");
+    const okN1=nm1.length>=2, okN2=nm2.length>=2, okN3=nm3.length>=2;
+    const okP=/^05\d{8}$/.test(phone), okPw=password.length>=6, okDob=!!dob;
+    document.getElementById("a-f-name1").classList.toggle("bad",!okN1);
+    document.getElementById("a-f-name2").classList.toggle("bad",!okN2);
+    document.getElementById("a-f-name3").classList.toggle("bad",!okN3);
     document.getElementById("a-f-phone").classList.toggle("bad",!okP);
     document.getElementById("a-f-dob").classList.toggle("bad",!okDob);
     document.getElementById("a-f-pass").classList.toggle("bad",!okPw);
-    if(!okN||!okP||!okDob||!okPw) return;
+    if(!okN1) return document.getElementById("a-nm1").focus();
+    if(!okN2) return document.getElementById("a-nm2").focus();
+    if(!okN3) return document.getElementById("a-nm3").focus();
+    if(!okP||!okDob||!okPw) return;
     const btn=document.getElementById("a-submit"); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
     try{
       const r=await api("/customers/signup",{method:"POST",body:JSON.stringify({name,phone,password,dob})});

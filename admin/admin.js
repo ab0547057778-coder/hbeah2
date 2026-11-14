@@ -107,16 +107,16 @@ function renderBookings() {
     if (b.status !== "cancelled") actions.push(`<button class="btn btn-ghost btn-sm" data-act="cancelled" data-id="${b.id}">إلغاء</button>`);
     actions.push(`<a class="btn btn-ghost btn-sm" href="https://wa.me/966${b.phone.slice(1)}?text=${waMsg}" target="_blank" rel="noopener">واتساب</a>`);
     return `<tr>
-      <td><span class="latin" dir="ltr">${esc(b.ref)}</span></td>
-      <td>${esc(b.serviceName)}</td>
-      <td>${esc(b.branchName)}</td>
-      <td>${esc(dShort.format(new Date(b.date)))}، ${t12(b.time)}</td>
-      <td>${esc(b.name)}</td>
-      <td dir="ltr">${esc(b.phone)}</td>
-      <td>${esc({ tabby: "تابي", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
-      <td><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
-      <td class="notes-cell">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}</td>
-      <td><div class="row-actions">${actions.join("")}</div></td>
+      <td data-label=""><span class="latin" dir="ltr" style="font-weight:600;font-size:15px">${esc(b.ref)}</span></td>
+      <td data-label="الخدمة">${esc(b.serviceName)}</td>
+      <td data-label="الفرع">${esc(b.branchName)}</td>
+      <td data-label="الموعد">${esc(dShort.format(new Date(b.date)))}، ${t12(b.time)}</td>
+      <td data-label="العميلة">${esc(b.name)}</td>
+      <td data-label="الجوال" dir="ltr">${esc(b.phone)}</td>
+      <td data-label="الدفع">${esc({ tabby: "تابي", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
+      <td data-label="الحالة" style="text-align:start"><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
+      <td class="notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}</td>
+      <td data-label=""><div class="row-actions">${actions.join("")}</div></td>
     </tr>`;
   }).join("");
   body.querySelectorAll("[data-act]").forEach(btn => btn.addEventListener("click", async () => {
@@ -347,13 +347,13 @@ async function loadDiscounts() {
     }).join("، ");
     const dur = (d.startDate || "...") + " → " + (d.endDate || "بلا نهاية");
     return `<tr>
-      <td class="latin" dir="ltr">${esc(d.code)}</td>
-      <td>${d.percent}%</td>
-      <td>${esc(GATEWAY_LABEL[d.gateway] || d.gateway)}</td>
-      <td>${esc(svcLabel)}</td>
-      <td>${esc(dur)}</td>
-      <td><span class="disc-badge ${d.active ? "active" : "inactive"}">${d.active ? "مفعّل" : "متوقف"}</span></td>
-      <td><div class="row-actions">
+      <td data-label="" class="latin" dir="ltr" style="font-weight:600;font-size:15px">${esc(d.code)}</td>
+      <td data-label="النسبة">${d.percent}%</td>
+      <td data-label="بوابة الدفع">${esc(GATEWAY_LABEL[d.gateway] || d.gateway)}</td>
+      <td data-label="يسري على" style="text-align:start">${esc(svcLabel)}</td>
+      <td data-label="المدة" style="text-align:start">${esc(dur)}</td>
+      <td data-label="الحالة"><span class="disc-badge ${d.active ? "active" : "inactive"}">${d.active ? "مفعّل" : "متوقف"}</span></td>
+      <td data-label=""><div class="row-actions">
         <button class="btn btn-ghost btn-sm" data-toggle-d="${d.id}" data-active="${d.active}">${d.active ? "إيقاف" : "تفعيل"}</button>
         <button class="btn btn-ghost btn-sm" data-del-d="${d.id}">حذف</button>
       </div></td>

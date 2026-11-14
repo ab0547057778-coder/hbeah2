@@ -16,7 +16,7 @@ async function api(path, opts){
 }
 
 let SERVICES=[], BRANCHES=[], CURRENT_CUSTOMER=null;
-let PAYMENT_CONFIG={card:false,tabby:false,tamara:false};
+let PAYMENT_CONFIG={tabby:false};
 const availCache = new Map(); // "branch:year-month" -> {date:[{time,available}]}
 
 api("/payment-config").then(c=>{ PAYMENT_CONFIG=c; }).catch(()=>{});
@@ -194,7 +194,7 @@ function stepDetails(){
   });
   document.getElementById("hnote").classList.toggle("show",S.health.length>0);
 }
-const PAYS=[{id:"tabby",n:"تابي",d:"قسّطي المبلغ على دفعات بدون فوائد"},{id:"tamara",n:"تمارا",d:"قسّطي المبلغ على دفعات بدون فوائد"},{id:"card",n:"مدى، Apple Pay، أو بطاقة ائتمانية",d:"ادفعي المبلغ كامل عند التأكيد"}];
+const PAYS=[{id:"tabby",n:"تابي",d:"قسّطي المبلغ على دفعات بدون فوائد"},{id:"bank",n:"تحويل بنكي",d:"نرسل لك تفاصيل الحساب على الواتساب بعد تأكيد الحجز"},{id:"cash",n:"كاش عند الحضور",d:"ادفعي المبلغ نقداً في الفرع وقت موعدك"}];
 function totalLine(s){
   if(S.discount) return `<div><span>الإجمالي</span><b class="tot"><span style="text-decoration:line-through;color:var(--muted);font-size:14px;margin-inline-end:8px">${fmtN(s.price)}</span>${fmtN(S.discount.finalPrice)} ريال</b></div>`;
   return `<div><span>الإجمالي</span><b class="tot">${fmtN(s.price)} ريال</b></div>`;

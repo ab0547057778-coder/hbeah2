@@ -3,6 +3,9 @@ const fmtN = n => Number(n).toLocaleString("en-US");
 const dShort = new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "short" });
 const t12 = s => { let [h, m] = s.split(":").map(Number); const p = h >= 12 ? "م" : "ص"; h = h % 12 || 12; return h + ":" + String(m).padStart(2, "0") + " " + p; };
 const WD_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+// Same list and order as public/app.js's HEALTH array, so a booking's stored
+// health indices can be shown to the admin by name instead of a bare flag.
+const HEALTH_LABELS = ["داء السكري", "ارتفاع أو انخفاض في ضغط الدم", "استخدام أدوية سيولة الدم", "التهاب أو مشكلة جلدية في المنطقة", "حساسية تجاه الأصبغة", "وشم أو مايكروبليدينق سابق للحواجب"];
 // JS getDay(): 0=Sunday..6=Saturday, displayed Sat-first to match the public calendar.
 const WD_ORDER = [6, 0, 1, 2, 3, 4, 5];
 
@@ -139,7 +142,7 @@ function renderBookings() {
       <td class="bk-detail" data-label="الجوال" dir="ltr">${esc(b.phone)}</td>
       <td class="bk-detail" data-label="الدفع">${esc({ tabby: "تابي", bank: "تحويل بنكي", cash: "كاش", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
       <td class="bk-detail" data-label="الحالة" style="text-align:start"><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
-      <td class="bk-detail notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="توجد ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}${retouchInfo}</td>
+      <td class="bk-detail notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? `<span class="health-flags">⚠️ ${esc(b.health.map(i => HEALTH_LABELS[i] || i).join("، "))}</span><br>` : ""}${esc(b.notes || "")}${retouchInfo}</td>
       <td class="bk-detail" data-label=""><div class="row-actions">${actions.join("")}</div></td>
     </tr>`;
   }).join("");

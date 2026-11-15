@@ -180,7 +180,7 @@ async function stepDate(){
   body.querySelectorAll(".time:not([disabled])").forEach(b=>b.onclick=()=>{S.time=b.dataset.t; render(); body.scrollTop=body.scrollHeight;});
   footer(!!(S.date&&S.time),"التالي",()=>go(3));
 }
-const HEALTH=["أعاني من داء السكري","أعاني من ارتفاع أو انخفاض في ضغط الدم","أستخدم أدوية سيولة الدم","أعاني من التهاب أو مشكلة جلدية في المنطقة","أعاني من حساسية تجاه الأصبغة","سبق لي عمل وشم أو مايكروبليدينق للحواجب"];
+const HEALTH=["داء السكري","ارتفاع أو انخفاض في ضغط الدم","استخدام أدوية سيولة الدم","التهاب أو مشكلة جلدية في المنطقة","حساسية تجاه الأصبغة","وشم أو مايكروبليدينق سابق للحواجب"];
 const toLatin=s=>s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d]/g,"");
 function stepDetails(){
   const phoneLocked=!!CURRENT_CUSTOMER;

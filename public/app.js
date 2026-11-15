@@ -180,7 +180,7 @@ async function stepDate(){
   body.querySelectorAll(".time:not([disabled])").forEach(b=>b.onclick=()=>{S.time=b.dataset.t; render(); body.scrollTop=body.scrollHeight;});
   footer(!!(S.date&&S.time),"التالي",()=>go(3));
 }
-const HEALTH=["لديّ داء السكري","لديّ ارتفاع أو انخفاض في ضغط الدم","أستخدم أدوية سيولة الدم","لديّ التهاب أو مشكلة جلدية في المنطقة","لديّ حساسية من الأصبغة","لديّ وشم أو مايكروبليدينق سابق للحواجب"];
+const HEALTH=["أعاني من داء السكري","أعاني من ارتفاع أو انخفاض في ضغط الدم","أستخدم أدوية سيولة الدم","أعاني من التهاب أو مشكلة جلدية في المنطقة","أعاني من حساسية تجاه الأصبغة","سبق لي عمل وشم أو مايكروبليدينق للحواجب"];
 const toLatin=s=>s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[^\d]/g,"");
 function stepDetails(){
   const phoneLocked=!!CURRENT_CUSTOMER;
@@ -342,7 +342,7 @@ function aRenderLogin(){
   <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="current-password"><div class="err">اكتبي كلمة المرور</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="a-switch">ليس لديك حساب؟ <a href="#" id="a-to-signup">أنشئي حساباً جديداً</a></p></div>`;
+  <p class="a-switch">لا تملكين حساباً؟ <a href="#" id="a-to-signup">أنشئي حساباً جديداً</a></p></div>`;
   document.getElementById("a-to-signup").onclick=(e)=>{e.preventDefault(); AV="signup"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">دخول</button>`;
   document.getElementById("a-submit").onclick=async()=>{
@@ -372,7 +372,7 @@ function aRenderSignup(){
   <div class="field" id="a-f-dob"><label for="a-dob">تاريخ الميلاد</label><input id="a-dob" type="date" max="${maxDob.toISOString().slice(0,10)}"><div class="err">تاريخ ميلاد غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="new-password"><div class="err">٦ خانات على الأقل</div></div>
   <div class="box-note" id="a-err"></div>
-  <p class="a-switch">لديك حساب؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p></div>`;
+  <p class="a-switch">تملكين حساباً؟ <a href="#" id="a-to-login">سجّلي دخولك</a></p></div>`;
   document.getElementById("a-to-login").onclick=(e)=>{e.preventDefault(); AV="login"; aRender();};
   afoot.innerHTML=`<button class="btn btn-rose" style="flex:1" id="a-submit">إنشاء حساب</button>`;
   document.getElementById("a-submit").onclick=async()=>{
@@ -412,7 +412,7 @@ async function aRenderAccount(){
   let list=[];
   try{ list=await api("/customers/bookings"); }catch(e){}
   const el=document.getElementById("a-bookings");
-  if(!list.length){ el.innerHTML='<p class="hint">لا يوجد لديك أي حجز حتى الآن.</p>'; return; }
+  if(!list.length){ el.innerHTML='<p class="hint">لم تقومي بأي حجز حتى الآن.</p>'; return; }
   el.innerHTML=list.map(b=>{
     const price = b.discount ? b.discount.percent+'% خصم، '+fmtN(b.price)+' ريال' : fmtN(b.price)+' ريال';
     let actions="";

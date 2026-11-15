@@ -139,7 +139,7 @@ function renderBookings() {
       <td class="bk-detail" data-label="الجوال" dir="ltr">${esc(b.phone)}</td>
       <td class="bk-detail" data-label="الدفع">${esc({ tabby: "تابي", bank: "تحويل بنكي", cash: "كاش", tamara: "تمارا", card: "بطاقة" }[b.pay] || b.pay)}</td>
       <td class="bk-detail" data-label="الحالة" style="text-align:start"><span class="badge ${b.status}">${statusLabel(b.status)}</span>${b.paid ? '<br><span class="badge confirmed" style="margin-top:4px">💳 مدفوع</span>' : ""}${b.rescheduleRequested ? '<br><span class="badge pending" style="margin-top:4px">⏰ طلبت تأجيل</span>' : ""}</td>
-      <td class="bk-detail notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="لديها ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}${retouchInfo}</td>
+      <td class="bk-detail notes-cell" data-label="ملاحظات" style="text-align:start">${b.health && b.health.length ? '<span class="health-flags" title="توجد ملاحظات صحية">⚠️ ملاحظات صحية</span><br>' : ""}${esc(b.notes || "")}${retouchInfo}</td>
       <td class="bk-detail" data-label=""><div class="row-actions">${actions.join("")}</div></td>
     </tr>`;
   }).join("");

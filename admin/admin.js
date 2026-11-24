@@ -216,9 +216,9 @@ document.getElementById("new-booking-btn").addEventListener("click", () => {
       <div><label for="nb-time">الوقت</label><input type="time" id="nb-time"></div>
     </div>
     <div class="row" style="margin-top:12px">
-      <div><label for="nb-name1">الاسم الأول</label><input id="nb-name1" placeholder="مثال: هبة"></div>
-      <div><label for="nb-name2">اسم الأب</label><input id="nb-name2" placeholder="مثال: عبدالمحسن"></div>
-      <div><label for="nb-name3">اسم العائلة</label><input id="nb-name3" placeholder="مثال: المسلم"></div>
+      <div><label for="nb-name1">الاسم الأول</label><input id="nb-name1"></div>
+      <div><label for="nb-name2">اسم الأب</label><input id="nb-name2"></div>
+      <div><label for="nb-name3">اسم العائلة</label><input id="nb-name3"></div>
     </div>
     <div class="field" style="margin-top:12px"><label for="nb-phone">رقم الجوال</label><input id="nb-phone" dir="ltr" placeholder="05xxxxxxxx"></div>
     <div class="row" style="margin-top:12px">

@@ -190,7 +190,7 @@ function stepDetails(){
   <fieldset><legend>هل ينطبق عليكِ أيٌّ مما يلي قبل الجلسة؟</legend><div class="checks">${HEALTH.map((h,i)=>`<label class="check"><input type="checkbox" data-h="${i}" ${S.health.includes(i)?"checked":""}>${h}</label>`).join("")}</div>
   <div class="box-note" id="hnote">بعض هذه الحالات قد لا يناسبها هذا الإجراء حالياً. يُنصح بالتواصل معنا عبر الواتساب قبل تأكيد موعدك. <a href="https://wa.me/${WA}" target="_blank" rel="noopener">تواصلي معنا</a></div></fieldset>
   <div class="field"><label for="nt-in">ملاحظات (اختياري)</label><textarea id="nt-in" rows="2">${esc(S.notes)}</textarea></div>
-  <p class="hint" style="margin:0 0 10px">سياسة الإلغاء: يُعاد إليك المبلغ كاملاً عند الإلغاء قبل الموعد بـ48 ساعة أو أكثر، وبعد ذلك يمكن تأجيل الموعد مرة واحدة دون استرداد.</p>
+  <p class="hint" style="margin:0 0 10px">سياسة الإلغاء: يُعاد إليك المبلغ كاملاً عند الإلغاء قبل الموعد بـ48 ساعة، وبعد ذلك يمكن تأجيل الموعد مرة واحدة دون استرداد.</p>
   <label class="check"><input type="checkbox" id="agree" ${S.agree?"checked":""}>قرأت سياسة الإلغاء والتأجيل وأوافق عليها</label>`;
   const upd=()=>{S.name=val("nm-in").trim(); S.phone=val("ph-in"); S.notes=val("nt-in"); S.agree=document.getElementById("agree").checked;
     S.health=[...body.querySelectorAll("[data-h]:checked")].map(x=>+x.dataset.h); document.getElementById("hnote").classList.toggle("show",S.health.length>0);
@@ -365,9 +365,9 @@ function aRenderSignup(){
   const maxDob=new Date(); maxDob.setFullYear(maxDob.getFullYear()-10);
   abody.innerHTML=`<div class="aview">${AVATAR_SVG}<div class="a-head"><h3>أنشئي حسابك</h3><p>خطوة واحدة قبل أن نبدأ حجزك</p></div>
   ${gateNote()}
-  <div class="field" id="a-f-name1"><label for="a-nm1">الاسم الأول</label><input id="a-nm1" autocomplete="given-name" placeholder="مثال: هبة"><div class="err">الاسم الأول مطلوب</div></div>
-  <div class="field" id="a-f-name2"><label for="a-nm2">اسم الأب</label><input id="a-nm2" autocomplete="additional-name" placeholder="مثال: عبدالمحسن"><div class="err">اسم الأب مطلوب</div></div>
-  <div class="field" id="a-f-name3"><label for="a-nm3">اسم العائلة</label><input id="a-nm3" autocomplete="family-name" placeholder="مثال: المسلم"><div class="err">اسم العائلة مطلوب</div></div>
+  <div class="field" id="a-f-name1"><label for="a-nm1">الاسم الأول</label><input id="a-nm1" autocomplete="given-name"><div class="err">الاسم الأول مطلوب</div></div>
+  <div class="field" id="a-f-name2"><label for="a-nm2">اسم الأب</label><input id="a-nm2" autocomplete="additional-name"><div class="err">اسم الأب مطلوب</div></div>
+  <div class="field" id="a-f-name3"><label for="a-nm3">اسم العائلة</label><input id="a-nm3" autocomplete="family-name"><div class="err">اسم العائلة مطلوب</div></div>
   <div class="field" id="a-f-phone"><label for="a-ph">رقم الجوال</label><input id="a-ph" inputmode="numeric" dir="ltr" style="text-align:right" placeholder="05xxxxxxxx" autocomplete="tel"><div class="err">رقم جوال غير صحيح</div></div>
   <div class="field" id="a-f-dob"><label for="a-dob">تاريخ الميلاد</label><input id="a-dob" type="date" max="${maxDob.toISOString().slice(0,10)}"><div class="err">تاريخ ميلاد غير صحيح</div></div>
   <div class="field" id="a-f-pass"><label for="a-pw">كلمة المرور</label><input id="a-pw" type="password" autocomplete="new-password"><div class="err">٦ خانات على الأقل</div></div>

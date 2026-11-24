@@ -96,6 +96,7 @@ async function boot() {
   loadServices();
   loadDiscounts();
   loadOffers();
+  loadGallery();
 }
 
 // ---------- bookings ----------
@@ -564,6 +565,66 @@ document.getElementById("o-create").addEventListener("click", async () => {
     toast("تم نشر العرض");
     loadOffers();
   } catch (e) { err.textContent = e.message; err.classList.add("show"); }
+});
+
+// ---------- gallery (before/after photos) ----------
+// Resized client-side before upload so pairs stay well under the server's
+// request-size limit instead of sending raw phone-camera photos.
+function fileToResizedDataUrl(file, maxDim, quality) {
+  maxDim = maxDim || 1000; quality = quality || 0.72;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h >= w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function loadGallery() {
+  const list = await api("/admin/gallery");
+  const el = document.getElementById("gallery-list");
+  const empty = document.getElementById("gallery-empty");
+  if (!list.length) { el.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  el.innerHTML = list.map(g => `<div class="card" style="padding:8px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <img src="${g.before}" alt="قبل" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px">
+      <img src="${g.after}" alt="بعد" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px">
+    </div>
+    <button class="btn btn-ghost btn-sm" data-del-g="${g.id}" style="width:100%;margin-top:8px">حذف</button>
+  </div>`).join("");
+  el.querySelectorAll("[data-del-g]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("حذف هذه الصور؟")) return;
+    await api(`/admin/gallery/${btn.dataset.delG}`, { method: "DELETE" });
+    toast("تم الحذف"); loadGallery();
+  }));
+}
+document.getElementById("g-create").addEventListener("click", async () => {
+  const err = document.getElementById("g-err");
+  err.classList.remove("show");
+  const beforeFile = document.getElementById("g-before").files[0];
+  const afterFile = document.getElementById("g-after").files[0];
+  if (!beforeFile || !afterFile) { err.textContent = "اختاري صورتين (قبل وبعد)"; err.classList.add("show"); return; }
+  try {
+    const [before, after] = await Promise.all([fileToResizedDataUrl(beforeFile), fileToResizedDataUrl(afterFile)]);
+    await api("/admin/gallery", { method: "POST", body: JSON.stringify({ before, after }) });
+    document.getElementById("g-before").value = "";
+    document.getElementById("g-after").value = "";
+    toast("تمت الإضافة");
+    loadGallery();
+  } catch (e) { err.textContent = e.message || "تعذرت إضافة الصور"; err.classList.add("show"); }
 });
 
 // ---------- account ----------

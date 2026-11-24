@@ -185,6 +185,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
       <button class="tab" data-view="services">الخدمات</button>
       <button class="tab" data-view="discounts">أكواد الخصم</button>
       <button class="tab" data-view="offers">العروض</button>
+      <button class="tab" data-view="gallery">قبل وبعد</button>
       <button class="tab" data-view="account">الحساب</button>
     </div>
     <div class="spacer"></div>
@@ -311,6 +312,24 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:24px 0}
         <h3 class="section-title">العروض الحالية</h3>
         <div id="offers-list"></div>
         <div class="empty" id="offers-empty" style="display:none">لا توجد عروض بعد</div>
+      </div>
+    </section>
+
+    <section class="view" id="view-gallery">
+      <div class="card">
+        <h3 class="section-title">إضافة صور قبل وبعد</h3>
+        <p class="hint">اختاري صورة "قبل" وصورة "بعد" لنفس العميلة، وتظهر مباشرة في الصفحة الرئيسية لموقع العميلات.</p>
+        <div class="row" style="margin-top:12px">
+          <div><label for="g-before">صورة قبل</label><input type="file" id="g-before" accept="image/*"></div>
+          <div><label for="g-after">صورة بعد</label><input type="file" id="g-after" accept="image/*"></div>
+        </div>
+        <button class="btn" id="g-create" style="margin-top:14px">إضافة</button>
+        <div class="login-err" id="g-err"></div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">الصور الحالية</h3>
+        <div id="gallery-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px"></div>
+        <div class="empty" id="gallery-empty" style="display:none">لا توجد صور بعد</div>
       </div>
     </section>
 

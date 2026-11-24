@@ -68,7 +68,17 @@ function renderMenu(){
   menu.innerHTML=SERVICES.map(s=>`<div class="item"><div><h3>${esc(s.name)}<span class="latin">${esc(s.en)}</span></h3><p>${esc(s.desc)}</p></div><div class="price">${fmtN(s.price)}<small>ريال</small></div><button class="btn btn-rose" data-book data-service="${s.id}">احجزي</button></div>`).join("");
 }
 const browPh=`<svg viewBox="0 0 120 40"><path d="M6 32 C30 10, 70 4, 112 14" stroke-width="2"/><path d="M20 26 C34 14, 60 9, 96 12" stroke-width="1" opacity=".5"/></svg>`;
-(function(){ const gal=document.getElementById("gal"); if(gal) gal.innerHTML=["قبل","بعد","قبل","بعد"].map(l=>`<div class="ph"><div>${browPh}${l}<br><small>صورة العميلة</small></div></div>`).join(""); })();
+(function(){
+  const gal=document.getElementById("gal"); if(!gal) return;
+  const placeholder=()=>["قبل","بعد","قبل","بعد"].map(l=>`<div class="ph"><div>${browPh}${l}<br><small>صورة العميلة</small></div></div>`).join("");
+  api("/gallery").then(items=>{
+    if(!items||!items.length){ gal.innerHTML=placeholder(); return; }
+    gal.innerHTML=items.slice(0,4).flatMap(it=>[
+      `<div class="ph gph"><img src="${it.before}" alt="قبل"><small>قبل</small></div>`,
+      `<div class="ph gph"><img src="${it.after}" alt="بعد"><small>بعد</small></div>`
+    ]).join("");
+  }).catch(()=>{ gal.innerHTML=placeholder(); });
+})();
 
 async function monthAvail(branch, year, month, serviceId){
   const k = branch+":"+year+"-"+month+":"+(serviceId||"");
